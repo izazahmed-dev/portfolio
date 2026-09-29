@@ -72,10 +72,26 @@ otherwise is selling something. What this design actually achieves:
 - **Provenance.** Previews carry a viewer token and date, so a copy that leaves
   the site carries a receipt. This is a deterrent, not a control.
 
-Right-click blocking was deliberately **not** implemented. It cannot stop
-`curl`, it breaks keyboard and screen-reader users, and it advertises that
-there is something to hide. If you want a deterrent signal, use `draggable={false}`
-on images (already set) rather than a global `contextmenu` block.
+Right-click is suppressed site-wide by an inline head script in
+`src/app/layout.tsx` (before hydration, so there is no window where it still
+opens). Images additionally refuse drag-to-desktop.
+
+**What this is worth, plainly:** it is friction, not protection. `curl`, F12 →
+Network, and Ctrl+S all still work, because `curl` never runs JavaScript. It
+stops the casual right-click → "Save image as". The load-bearing control is
+the signed expiring URLs above.
+
+Two deliberate carve-outs, both verified in a real browser:
+
+- **Keyboard users keep the menu.** Shift+F10 and the Menu key still open it,
+  detected via the `shiftKey` modifier. Blocking those would be a genuine
+  WCAG 2.1.1 failure, and this is a portfolio you want usable.
+- **Text fields keep the menu**, so cut/copy/paste survives.
+- **`user-select` is untouched**, so text selection and copying still work.
+
+To make it absolute for everyone, delete the `openForKeyboard` early-return
+and the `t.closest('input, textarea...')` line in the guard. You lose
+keyboard access to the context menu, which is a real accessibility cost.
 
 ### The path-traversal guard
 
@@ -120,6 +136,19 @@ Checked against a production build (Next 15.5.26):
 | signing secret or `createHmac` in any client chunk | absent |
 | bare `/documents/` paths in HTML | 0 |
 | odometer digit strips in HTML | 0 |
+
+Context-menu guard, checked by dispatching real `contextmenu` events in
+Chrome and reading back `defaultPrevented`:
+
+| check | result |
+|---|---|
+| right-click on page body | blocked |
+| right-click on hero heading | blocked |
+| right-click on an image | blocked |
+| image drag-to-desktop | blocked |
+| Shift+F10 (keyboard) | still opens, by design |
+| Menu key (keyboard) | still opens, by design |
+| text selection | still enabled (`user-select: auto`) |
 
 ---
 

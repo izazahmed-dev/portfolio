@@ -236,6 +236,89 @@ const noFlash = `(function(){try{
   document.documentElement.style.colorScheme="dark";
 }})();`;
 
+
+/**
+ * CONTEXT MENU GUARD
+ *
+ * Installed in the document head as a blocking script so it is live before
+ * React hydrates, rather than a useEffect that leaves a window where the menu
+ * still opens. Written as a plain string rather than a component because it
+ * has to exist in the very first parsed HTML.
+ *
+ * WHAT IT DOES: suppresses the browser context menu on the document, and on
+ * every image, so "Save image as" and "Open image in new tab" are not offered
+ * by right-click. It also stops drag-to-desktop on images, the other
+ * one-click route to a file.
+ *
+ * WHAT IT DOES NOT DO, and it is worth being blunt: this is not protection.
+ * A visitor who wants the bytes still gets them, and there is no way to
+ * change that. F12 to the Network tab, Ctrl+S, or plain curl all bypass a
+ * listener trivially, because curl never runs JavaScript. The real protection
+ * is the signed expiring URLs in src/lib/signing.ts, which remove the
+ * permanent public link. This only raises the effort for the casual case.
+ *
+ * THE ACCESSIBILITY TRADE, made explicit. Right-click is not the only route to
+ * a context menu: keyboard and screen-reader users use Shift+F10 or the Menu
+ * key, and touch users long-press. So this deliberately:
+ *
+ *   - still opens the menu when Shift is held, which is how keyboard and
+ *     screen-reader users raise the same menu (Shift+F10, and the Menu key on
+ *     most layouts), so keyboard-only navigation is not degraded;
+ *   - still allows the menu inside text fields, where right-click is the only
+ *     route to cut, copy and paste;
+ *   - never sets user-select none, because that would break text selection
+ *     for everyone, and copying an email address is a legitimate need here.
+ *
+ * Net effect: mouse users lose right-click, keyboard and touch users do not.
+ * Making it absolute for everyone is a two-line change marked ABSOLUTE below,
+ * but it will fail WCAG 2.1 success criterion 2.1.1, and this is a portfolio
+ * you want recruiters to be able to use comfortably.
+ */
+const contextGuard = `(function(){
+  /*
+   * The keyboard escape hatch.
+   *
+   * IMPORTANT, and this was a real bug caught by testing: a contextmenu event
+   * carries NO usable key information. A mouse right-click has key === "" and
+   * a real Shift+F10 also reports key === "" on the contextmenu event, because
+   * that event is fired by the browser's menu logic rather than from the key
+   * press. So the original check for e.key === 'F10' could never be true and
+   * the escape hatch silently never worked -- the menu was blocked for
+   * keyboard users too, which is exactly the accessibility failure this was
+   * meant to avoid.
+   *
+   * The only reliable signal is the modifier, because the OS/browsers do set
+   * shiftKey for the Shift+F10 combination. That is what is tested below. It
+   * means a user who happens to be holding Shift while right-clicking with a
+   * mouse also gets the menu, which is a far better failure mode than denying
+   * keyboard users their only route to the menu.
+   */
+  function openForKeyboard(e){
+    return e.shiftKey === true;
+  }
+
+  function onContextMenu(e){
+    var t = e.target;
+    if(!t || !t.nodeType) return;
+    if(openForKeyboard(e)) return;
+
+    // Text entry keeps its menu: cut, copy and paste are keyboard-reachable
+    // everywhere except here, so blocking it would remove the ability.
+    if(t.closest && t.closest('input, textarea, select, [contenteditable="" i], [contenteditable="true" i]')) return;
+
+    e.preventDefault();
+  }
+
+  // Capture phase, so this runs before any component-level handler and cannot
+  // be defeated by a child calling stopPropagation first.
+  document.addEventListener('contextmenu', onContextMenu, true);
+
+  // Images: also stop the native drag-to-desktop.
+  document.addEventListener('dragstart', function(e){
+    if(e.target && e.target.nodeName === 'IMG') e.preventDefault();
+  }, true);
+})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -248,6 +331,12 @@ export default function RootLayout({
       className={`${display.variable} ${sans.variable} ${mono.variable}`}
     >
       <head>
+        {/*
+          First, before anything else. The guard is a blocking script with no
+          defer, so the listener is attached during initial parse -- there is
+          no hydration window in which right-click still opens a menu.
+        */}
+        <script dangerouslySetInnerHTML={{ __html: contextGuard }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }}

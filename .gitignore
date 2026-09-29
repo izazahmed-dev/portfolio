@@ -37,6 +37,11 @@ yarn-error.log*
 !*.example
 tsconfig.tsbuildinfo
 
+# local dev server output
+server.log
+npm-debug.log*
+yarn-error.log*
+
 # documents cabinet: the originals and their previews are no longer public
 # assets. They live in /secured and are streamed by the server through the
 # /doc and /preview routes, so they must never land in a build artefact, a
