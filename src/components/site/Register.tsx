@@ -13,6 +13,7 @@ import {
 } from "@/components/motion/Kinetic";
 import { DOCS, TRANSCRIPTS } from "@/lib/records";
 import { useDocLink } from "@/components/site/DocumentAccess";
+import { useOpenDocument } from "@/components/site/DocumentViewerProvider";
 
 /**
  * Register.
@@ -24,13 +25,14 @@ import { useDocLink } from "@/components/site/DocumentAccess";
 export function Register() {
   const [active, setActive] = useState(TRANSCRIPTS[0].id);
   const body = useRef<HTMLDivElement | null>(null);
-  const wipe = useDirectionalWipe<HTMLAnchorElement>();
+  const wipe = useDirectionalWipe<HTMLButtonElement>();
 
   const current = TRANSCRIPTS.find((t) => t.id === active) ?? TRANSCRIPTS[0];
   const source = DOCS.find((d) => d.id === current.docId);
   // Signed, expiring link. doc.file is a bare path into /secured and must never
-  // be written into the DOM.
+  // be written into the DOM. Used only to confirm a link exists for this row.
   const sourceLink = useDocLink(current.docId);
+  const openDocument = useOpenDocument();
   const twoCol = Boolean(current.columns[1]);
   const grid = twoCol ? "minmax(0,1fr) 116px 116px" : "minmax(0,1fr) 116px";
 
@@ -167,17 +169,21 @@ export function Register() {
               <Meta k="Result as printed" v={current.result} />
             </dl>
 
+            {/*
+              A button, not a link. An <a href> to the file hands it to the
+              browser's native PDF viewer, which brings its own download and
+              print buttons that nothing here can reach.
+            */}
             {source && sourceLink && (
-              <a
+              <button
                 ref={wipe}
-                href={sourceLink.file}
-                target="_blank"
-                rel="noopener noreferrer"
+                type="button"
+                onClick={() => openDocument(source.id)}
                 className="btn btn--line reg-meta mt-8"
               >
                 Open the sheet
                 <ArrowUpRight size={13} strokeWidth={2.2} />
-              </a>
+              </button>
             )}
           </div>
 

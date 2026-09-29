@@ -7,6 +7,7 @@ import { Warrant, Colophon } from "@/components/site/Warrant";
 import { DOCS } from "@/lib/records";
 import { fileUrl, previewUrl } from "@/lib/signing";
 import { DocumentAccess } from "@/components/site/DocumentAccess";
+import { DocumentViewerProvider } from "@/components/site/DocumentViewerProvider";
 
 /**
  * Server component. Every animated island below is its own client leaf.
@@ -43,16 +44,20 @@ export default function Page() {
 
   return (
     <DocumentAccess links={links}>
-      <RunningHead />
-      <main id="main">
-        <TitlePage />
-        <Dossier />
-        <Cabinet />
-        <Register />
-        <Warrant />
-        <Colophon />
-      </main>
-      <Imprint />
+      {/* Mounted above every section so the register and the warrant can open
+          a document in the same reader the cabinet uses. */}
+      <DocumentViewerProvider>
+        <RunningHead />
+        <main id="main">
+          <TitlePage />
+          <Dossier />
+          <Cabinet />
+          <Register />
+          <Warrant />
+          <Colophon />
+        </main>
+        <Imprint />
+      </DocumentViewerProvider>
     </DocumentAccess>
   );
 }

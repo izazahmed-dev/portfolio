@@ -22,6 +22,10 @@ import {
 import { DOCS, type SourceDoc } from "@/lib/records";
 import { useDocLink } from "@/components/site/DocumentAccess";
 import { Watermark } from "@/components/site/Watermark";
+import {
+  useDocumentViewerOpen,
+  useOpenDocument,
+} from "@/components/site/DocumentViewerProvider";
 
 /**
  * The cabinet.
@@ -34,6 +38,10 @@ import { Watermark } from "@/components/site/Watermark";
 export function Cabinet() {
   const [activeId, setActiveId] = useState(DOCS[0].id);
   const [openId, setOpenId] = useState<string | null>(null);
+  // The full-page reader lives in DocumentViewerProvider, above every section,
+  // so the register and the warrant can summon it too. All this needs is a way
+  // to ask.
+  const openDocument = useOpenDocument();
 
   const active = DOCS.find((d) => d.id === activeId) ?? DOCS[0];
   const opened = openId ? DOCS.find((d) => d.id === openId) ?? null : null;
@@ -77,7 +85,11 @@ export function Cabinet() {
         </div>
       </div>
 
-      <Drawer doc={opened} onClose={() => setOpenId(null)} />
+      <Drawer
+        doc={opened}
+        onClose={() => setOpenId(null)}
+        onViewFull={openDocument}
+      />
     </section>
   );
 }
@@ -355,12 +367,22 @@ function Plate({ doc, onOpen }: { doc: SourceDoc; onOpen: () => void }) {
  * the page, which is the same gesture as pulling a plate out of a cabinet.
  * Focus is trapped, Escape closes, and the trigger regains focus on exit.
  */
-function Drawer({ doc, onClose }: { doc: SourceDoc | null; onClose: () => void }) {
+function Drawer({
+  doc,
+  onClose,
+  onViewFull,
+}: {
+  doc: SourceDoc | null;
+  onClose: () => void;
+  /** hand the document to the shared full-page reader */
+  onViewFull: (id: string) => void;
+}) {
   const panel = useRef<HTMLDivElement | null>(null);
   const scrim = useRef<HTMLButtonElement | null>(null);
   const closeBtn = useRef<HTMLButtonElement | null>(null);
-  const wipe = useDirectionalWipe<HTMLAnchorElement>();
+  const wipe = useDirectionalWipe<HTMLButtonElement>();
   const drawerLink = useDocLink(doc?.id ?? "");
+  const viewerOpen = useDocumentViewerOpen();
 
   useEffect(() => {
     if (!doc) return;
@@ -369,7 +391,13 @@ function Drawer({ doc, onClose }: { doc: SourceDoc | null; onClose: () => void }
     closeBtn.current?.focus();
 
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      // Stand down while the reader is up. Both layers bind Escape on window,
+      // so without this one press would close the reader AND this drawer, and
+      // the visitor would be ejected two steps at once.
+      if (e.key === "Escape") {
+        if (viewerOpen()) return;
+        onClose();
+      }
       if (e.key !== "Tab" || !panel.current) return;
 
       const nodes = panel.current.querySelectorAll<HTMLElement>(
@@ -411,7 +439,12 @@ function Drawer({ doc, onClose }: { doc: SourceDoc | null; onClose: () => void }
       document.body.style.overflow = "";
       window.removeEventListener("keydown", onKey);
     };
-  }, [doc, onClose]);
+    // viewerOpen is a dependency, not a captured value. The reader is mounted
+    // by a provider ABOVE this component, so opening it does not re-render the
+    // Cabinet, which means `onClose` keeps its identity and this effect would
+    // otherwise keep the stale "reader is not open" closure for the whole time
+    // the reader is on screen. Escape would then close both layers at once.
+  }, [doc, onClose, viewerOpen]);
 
   if (!doc) return null;
 
@@ -522,17 +555,23 @@ function Drawer({ doc, onClose }: { doc: SourceDoc | null; onClose: () => void }
               </div>
             )}
 
+            {/*
+              Opens the in-page viewer rather than a new tab. A tab would hand
+              the file to the browser's native PDF viewer, which carries its
+              own download and print buttons that nothing on this side can
+              reach. The viewer rasterises to a canvas, so the only controls
+              that exist are the ones below.
+            */}
             {drawerLink ? (
-              <a
+              <button
                 ref={wipe}
-                href={drawerLink.file}
-                target="_blank"
-                rel="noopener noreferrer"
+                type="button"
+                onClick={() => onViewFull(doc.id)}
                 className="btn drawer-line mt-7 w-full"
               >
-                Open original
+                Open full document
                 <ArrowUpRight size={13} strokeWidth={2.2} />
-              </a>
+              </button>
             ) : (
               <p className="drawer-line t-small mt-7" style={{ color: "var(--ink-lbl)" }}>
                 The signed link for this document has expired. Reload the page

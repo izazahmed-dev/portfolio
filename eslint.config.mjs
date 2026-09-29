@@ -16,6 +16,10 @@ const eslintConfig = [
       "_archive/**",
       "secured/**",
       "next-env.d.ts",
+      // Vendored PDF.js worker, copied verbatim out of node_modules by
+      // scripts/copy-pdf-worker.mjs. Minified third-party build output: not
+      // ours to lint, and 1450 findings in it drowns out real ones.
+      "public/pdf.worker.min.mjs",
     ],
   },
   {
@@ -31,6 +35,14 @@ const eslintConfig = [
        * so the rule is off for this file rather than silenced inline twice.
        */
       "@next/next/no-img-element": "off",
+    },
+  },
+  {
+    // Build and tooling scripts report progress on stdout, which is the whole
+    // point of them. The app itself still gets the stricter no-console rule.
+    files: ["scripts/**/*.mjs"],
+    rules: {
+      "no-console": "off",
     },
   },
 ];

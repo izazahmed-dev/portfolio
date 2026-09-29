@@ -696,6 +696,46 @@
 }
 
 /* ==========================================================================
+   DOCUMENT VIEWER
+   The controls on the in-page reader. Deliberately austere: a row of square
+   ink buttons, matching the theme toggle rather than a browser toolbar, so
+   the only affordances a visitor is offered are the ones this site chose to
+   offer. There is no download control here and that is the point.
+   ========================================================================== */
+
+.viewer-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: color 0.2s var(--ease), border-color 0.2s var(--ease),
+    background-color 0.2s var(--ease);
+}
+
+.viewer-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  background: var(--wash);
+}
+
+.viewer-btn:disabled {
+  /* Disabled, not hidden: a control that vanishes on page one makes the
+     pager feel broken. Dimmed reads as "nothing that way". */
+  opacity: 0.32;
+  cursor: not-allowed;
+}
+
+.viewer-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+/* ==========================================================================
    THEME SWITCH
    The one control that changes the press run. Icon-only on narrow screens,
    labelled on desktop, and it announces its state rather than its action. */

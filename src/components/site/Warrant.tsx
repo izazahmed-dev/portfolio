@@ -12,6 +12,7 @@ import {
 } from "@/components/motion/Kinetic";
 import { CAPABILITY, DOCS, PROFILE } from "@/lib/records";
 import { DocLinkContext } from "@/components/site/DocumentAccess";
+import { useOpenDocument } from "@/components/site/DocumentViewerProvider";
 
 /**
  * Warrant.
@@ -26,6 +27,7 @@ export function Warrant() {
   // of the context. doc.file is a bare path into /secured and must never be
   // written into the DOM, so the reference links resolve through here instead.
   const links = useContext(DocLinkContext);
+  const openDocument = useOpenDocument();
 
   useGSAP(
     () => {
@@ -87,13 +89,18 @@ export function Warrant() {
                 </CaseDrop>
                 <p className="t-body">{c.body}</p>
 
+                {/*
+                  A button, not a link. An <a href> to the file hands it to the
+                  browser's native PDF viewer, which brings its own download and
+                  print buttons. Opening the same canvas reader the cabinet
+                  uses keeps every document behind one surface.
+                */}
                 {doc && link && (
-                  <a
-                    href={link.file}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => openDocument(doc.id)}
                     className="warrant-ref rule-link t-data inline-flex items-start gap-2 text-[0.625rem] uppercase leading-relaxed tracking-[0.12em] md:justify-self-end md:text-right"
-                    style={{ color: "var(--ink-mut)" }}
+                    style={{ color: "var(--ink-mut)", cursor: "pointer" }}
                   >
                     {doc.reference ?? doc.issuer}
                     <ArrowUpRight
@@ -102,7 +109,7 @@ export function Warrant() {
                       className="mt-[3px] shrink-0"
                       style={{ color: "var(--accent-ink)" }}
                     />
-                  </a>
+                  </button>
                 )}
               </div>
             );

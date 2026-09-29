@@ -93,6 +93,49 @@ To make it absolute for everyone, delete the `openForKeyboard` early-return
 and the `t.closest('input, textarea...')` line in the guard. You lose
 keyboard access to the context menu, which is a real accessibility cost.
 
+### The in-page reader
+
+Documents open **inside the site**, rendered to a `<canvas>` with PDF.js:
+
+```
+src/components/site/DocumentViewer.tsx           the reader itself
+src/components/site/DocumentViewerProvider.tsx   one shared mount point
+public/pdf.worker.min.mjs                        self-hosted PDF.js worker
+```
+
+**Why canvas and not an `<iframe>`.** An iframe or a `target="_blank"` link
+hands the file to the browser's *native* PDF viewer, which carries its own
+download button, print button, and "save as" menu. No right-click guard on our
+side can reach into another origin's viewer. Rasterising each page ourselves
+means the only controls that exist are the ones this file defines — page
+navigation, zoom, close. There is no download affordance to remove because
+none is ever created.
+
+**Why no text layer.** PDF.js can emit a selectable text layer, which would
+put the document's words in the DOM where Ctrl+A copies them wholesale.
+Rendering to canvas only means the text is pixels. The trade is that the
+reader is not screen-reader accessible, so the drawer beside it carries the
+full transcript, which is the accessible path to the same information.
+
+**One reader, one route in.** Every entry point — the cabinet drawer, the
+register's "Open the sheet", and the warrant's evidence references — calls
+`useOpenDocument()` and opens the same reader. There is no remaining
+`href` anywhere in the codebase pointing at a raw file.
+
+`DocumentViewerProvider` is mounted above the page content, which is also why
+the drawer had to add `viewerOpen` to its keydown effect dependencies: a
+provider above it means opening the reader does not re-render the Cabinet, so
+the drawer would otherwise hold a stale closure and close itself on the same
+Escape press.
+
+### What this is worth
+
+Honestly: it removes the one-click routes, not the possibility. The bytes
+cross the network, so devtools can still retrieve them, and `curl` ignores
+all of this. What is actually gone is the *casual* path — right-click →
+Save image as, native viewer → download button, print to PDF. Combined with
+the signed 30-minute URLs, a link that leaks no longer works forever.
+
 ### The path-traversal guard
 
 Order matters and is the thing most often got wrong:
@@ -149,6 +192,23 @@ Chrome and reading back `defaultPrevented`:
 | Shift+F10 (keyboard) | still opens, by design |
 | Menu key (keyboard) | still opens, by design |
 | text selection | still enabled (`user-select: auto`) |
+
+In-page reader, checked in Chrome by dispatching real events and reading
+`defaultPrevented`, canvas pixels, and DOM state:
+
+| check | result |
+|---|---|
+| canvas rendered with real content | 792×612, 1382 ink samples |
+| no `<iframe>` / `<object>` / `<embed>` | 0 of each |
+| no download / save / print control in our UI | none |
+| no PDF text layer (text is pixels) | 0 chars in stage |
+| no raw `/api/doc` anchor anywhere | none |
+| right-click on the document | blocked |
+| zoom re-renders | 792 → 990px |
+| Escape closes reader, drawer survives | yes |
+| second Escape closes the drawer | yes |
+| focus restored on close | yes |
+| runtime errors | none |
 
 ---
 
