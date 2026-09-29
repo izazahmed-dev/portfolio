@@ -1,0 +1,863 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   PLATE AND PRESS
+   A letterpress specimen book rendered as a website. Archival paper stock,
+   ink-black type, one print red for registration marks and emphasis.
+
+   Two press runs now. The dark run is the default: an inverted sheet where
+   the paper is the ground and the ink is the type. The light run is the same
+   specimen book printed the other way round. One token set, swapped under
+   [data-theme], never mixed on the same page.
+   ========================================================================== */
+
+:root {
+  /* --- primitives: the light press run (paper ground) --- */
+  --paper-000: #f6f4ee;
+  --paper-100: #ece9e1;
+  --paper-200: #e2ded4;
+  --paper-300: #d5d0c4;
+  --ink-900: #14120f;
+  --ink-700: #2c2924;
+  --ink-500: #55504a;
+  /* ink-400 carries every micro label at 10.5px, so it must clear AA on the
+     darkest ground it ever sits on, which is --stock-sunk at 4.5 minimum. */
+  --ink-400: #625d56;
+  /* ink-300 is decorative only: rules, disabled marks, never text. */
+  --ink-300: #7c766d;
+  /* red-500 is reserved for rules, marks and fills, never for text.
+     red-600 is the text red: 5.32 on light stock, 4.91 on dark stock. */
+  --red-500: #d2320f;
+  --red-600: #b32a0b;
+
+  /* --- semantic: light is the alternate run --- */
+  --stock: var(--paper-100);
+  --stock-raised: var(--paper-000);
+  --stock-sunk: var(--paper-200);
+  --ink: var(--ink-900);
+  --ink-sub: var(--ink-700);
+  --ink-mut: var(--ink-500);
+  --ink-lbl: var(--ink-400);
+  --ink-rule: var(--ink-300);
+  --accent: var(--red-500);
+  --accent-ink: var(--red-600);
+  --rule: rgba(20, 18, 15, 0.14);
+  --rule-strong: rgba(20, 18, 15, 0.34);
+  --rule-hair: rgba(20, 18, 15, 0.08);
+  /* row banding / active row wash, ground-tinted */
+  --band: rgba(20, 18, 15, 0.028);
+  --wash: rgba(210, 50, 15, 0.045);
+  --focus: var(--red-500);
+  --shadow-plate: 0 40px 90px -40px rgba(20, 18, 15, 0.6);
+  --grain-blend: multiply;
+  --grain-opacity: 0.14;
+
+  /* --- rhythm ---
+     One vertical scale, derived from the display leading. --lead is the
+     hero line box; every vertical interval on the page is a multiple or a
+     clean fraction of it, so nothing sits on an arbitrary pixel value. */
+  --shell: 1440px;
+  --gutter: clamp(1.15rem, 4vw, 4rem);
+  --chrome: 68px;
+  --lead: 4.75rem;
+  --step-1: calc(var(--lead) * 0.25);
+  --step-2: calc(var(--lead) * 0.5);
+  --step-3: calc(var(--lead) * 0.75);
+  --step-4: var(--lead);
+  --step-6: calc(var(--lead) * 1.5);
+  --step-8: calc(var(--lead) * 2);
+
+  /* --- z scale, nothing invents its own --- */
+  --z-base: 1;
+  --z-pin: 10;
+  --z-chrome: 60;
+  --z-sheet: 70;
+  --z-grain: 90;
+
+  /* --- shape: one radius system, 0 for plates, pill for controls --- */
+  --r-plate: 0px;
+  --r-inner: 0px;
+
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* --- the dark press run: ink ground, paper type. The default. ---
+   Every value below is the inverted counterpart of the one above it, so the
+   hierarchy that works in light works in dark and the red stays the red. */
+[data-theme="dark"] {
+  --paper-000: #0e1318;
+  --paper-100: #0b0f14;
+  --paper-200: #151b22;
+  --paper-300: #232c35;
+  --ink-900: #f5f1e8;
+  --ink-700: #d6d1c6;
+  --ink-500: #9c968c;
+  --ink-400: #8a8478;
+  --ink-300: #5c5851;
+  --red-500: #e63946;
+  --red-600: #ff7a68;
+
+  --stock: var(--paper-100);
+  --stock-raised: var(--paper-000);
+  --stock-sunk: var(--paper-200);
+  --ink: var(--ink-900);
+  --ink-sub: var(--ink-700);
+  --ink-mut: var(--ink-500);
+  --ink-lbl: var(--ink-400);
+  --ink-rule: var(--ink-300);
+  --accent: var(--red-500);
+  --accent-ink: var(--red-600);
+  --rule: rgba(245, 241, 232, 0.14);
+  --rule-strong: rgba(245, 241, 232, 0.32);
+  --rule-hair: rgba(245, 241, 232, 0.08);
+  --band: rgba(245, 241, 232, 0.035);
+  --wash: rgba(230, 57, 70, 0.085);
+  --focus: var(--red-500);
+  --shadow-plate: 0 40px 90px -40px rgba(0, 0, 0, 0.75);
+  --grain-blend: screen;
+  --grain-opacity: 0.07;
+}
+
+/* Animatable variable-font axes on the display face.
+   --wdth / --wght drive whole headlines; --cw / --cwg drive one split
+   character, which is what lets a single glyph thicken as it prints.
+
+   AXIS BOUNDS ARE REAL AND WERE READ OFF THE BUILT FONT. Bricolage
+   Grotesque on Google Fonts runs wdth 75 to 100 and wght 200 to 800; it has
+   no extended width. Every number below sits inside those bounds, so the
+   animation is a genuine axis morph and never a clamped no-op. */
+@property --wdth {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 100;
+}
+@property --wght {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 700;
+}
+@property --cw {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 100;
+}
+@property --cwg {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 700;
+}
+
+/* A line that has been optically justified to its column. --fit is written
+   by useFitToMeasure; it drives the real width axis, so counters stay true. */
+.fit-line {
+  display: block;
+  white-space: nowrap;
+  font-variation-settings: "wdth" var(--fit, 100), "wght" 700, "opsz" 96;
+}
+
+/* A split character that carries its own axis values. Used by INK STRIKE and
+   LIFT OFF, where the weight change is the animation. */
+.ink-char {
+  font-variation-settings: "wdth" var(--cw), "wght" var(--cwg), "opsz" 96;
+  will-change: font-variation-settings, transform, opacity;
+}
+
+/* Inside a fitted line the character inherits the fitted width and animates
+   only its weight, so the ink-strike cannot fight the justification. */
+.fit-line .ink-char {
+  font-variation-settings: "wdth" var(--fit, 100), "wght" var(--cwg), "opsz" 96;
+}
+
+/* --- ODOMETER -------------------------------------------------------------
+   Every slot is an identical 1em box, digits and separators alike, so the
+   baseline holds across a mixed value like 940/1000. Tabular figures keep the
+   wheel from changing width as it spins.
+
+   The pre-hydration render is plain text, not slots, so it needs the same
+   tabular figures and tight letter-spacing to occupy identical width to the
+   mounted version. Without this the figure visibly re-flows on hydration, a
+   small but very obvious layout shift on the page's most prominent numbers. */
+.odo-slot {
+  display: inline-block;
+  overflow: hidden;
+  height: 1em;
+  line-height: 1;
+  vertical-align: baseline;
+}
+
+.odo-wheel {
+  display: block;
+  will-change: transform;
+}
+
+.odo-digit {
+  display: block;
+  height: 1em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* --- PROXIMITY WEIGHT ----------------------------------------------------
+   --pw is written per character by useProximityWeight. It moves only the
+   weight axis, so glyph advance widths stay put and the line never reflows
+   under the cursor. Weight range is clamped to the font's real 200-800. */
+.prox-char {
+  font-variation-settings: "wght" var(--pw, 500);
+  transition: font-variation-settings 0.13s linear;
+}
+
+@layer base {
+  * {
+    border-color: var(--rule);
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    background: var(--stock);
+  }
+
+  body {
+    margin: 0;
+    background: var(--stock);
+    color: var(--ink);
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.62;
+    overflow-x: hidden;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* The theme transition is a press run change, not a colour fade: it is
+     slow, global and happens once per switch. Reduced motion gets instant. */
+  body,
+  .plate,
+  .btn,
+  .tag {
+    transition-property: background-color, color, border-color, box-shadow;
+    transition-duration: 0.42s;
+    transition-timing-function: var(--ease);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    margin: 0;
+    font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+    text-wrap: balance;
+  }
+
+  p {
+    margin: 0;
+    text-wrap: pretty;
+  }
+
+  ul,
+  ol,
+  dl,
+  dd {
+    margin: 0;
+    padding: 0;
+  }
+
+  li {
+    list-style: none;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: #ffffff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  ::placeholder {
+    color: var(--ink-lbl);
+  }
+}
+
+/* ==========================================================================
+   TYPE
+   Display is Bricolage Grotesque, a variable face whose wdth and opsz axes
+   are scrubbed on scroll. Body is Instrument Sans. Data is JetBrains Mono.
+   ========================================================================== */
+
+/* Display type is set to a common measure so the two hero lines form one
+   solid mass with a hard right edge. font-stretch drives the real wdth axis
+   on Bricolage Grotesque, so the fit is a genuine condensed cut, never a
+   scaleX distortion. */
+.t-hero {
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(2.5rem, 6.6vw, 6.25rem);
+  line-height: 0.86;
+  letter-spacing: -0.045em;
+  font-weight: 700;
+  font-variation-settings: "wdth" var(--wdth), "wght" var(--wght), "opsz" 96;
+  font-kerning: normal;
+  font-feature-settings: "kern" 1, "liga" 1;
+  text-transform: uppercase;
+}
+
+/* Each hero line is justified to the measure: the glyph width axis closes
+   until the line fills its column. Set per line by the layout, not guessed. */
+.t-hero > span {
+  display: block;
+}
+
+.t-statement {
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(2.2rem, 6.6vw, 5.6rem);
+  line-height: 0.88;
+  letter-spacing: -0.04em;
+  font-weight: 700;
+  font-variation-settings: "wdth" var(--wdth), "wght" var(--wght), "opsz" 72;
+  text-transform: uppercase;
+}
+
+.t-h2 {
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.9rem, 4.6vw, 3.9rem);
+  line-height: 0.92;
+  letter-spacing: -0.034em;
+  font-weight: 700;
+  font-variation-settings: "wdth" var(--wdth), "wght" var(--wght), "opsz" 48;
+}
+
+.t-h3 {
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.15rem, 1.85vw, 1.6rem);
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  font-variation-settings: "opsz" 24;
+}
+
+.t-lead {
+  font-size: clamp(1.0625rem, 1.18vw, 1.3rem);
+  line-height: 1.58;
+  color: var(--ink-sub);
+  max-width: 46ch;
+}
+
+.t-body {
+  font-size: 0.9688rem;
+  line-height: 1.68;
+  color: var(--ink-sub);
+  max-width: 64ch;
+}
+
+.t-small {
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--ink-mut);
+}
+
+/* Rationed micro label. Page budget is enforced by hand, not by CSS. */
+.t-label {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6563rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-lbl);
+}
+
+/* ==========================================================================
+   UI DETAIL
+   Small affordances that make the sheet feel handled rather than rendered.
+   ========================================================================== */
+
+/* Selection carries the print red, so highlighting text feels like marking a
+   proof rather than a browser default. */
+::selection {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+/* The cursor sits between two states on interactive plates: a normal pointer
+   over prose, and a crosshair over anything that resolves a document, which
+   telegraphs "this opens something" before the click. */
+.sp {
+  cursor: crosshair;
+}
+
+/* Sticky column headers on the register table: the reader never loses which
+   column a mark belongs to on a long sheet. */
+.reg-head {
+  position: sticky;
+  top: var(--chrome);
+  z-index: var(--z-pin);
+  background: var(--stock);
+}
+
+/* Tabs read as a physical set: the active one sits forward on the sheet. */
+.reg-tab {
+  transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+
+.reg-tab[aria-selected="true"] {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 0 -2px var(--accent);
+}
+
+/* Keyboard users get the same plate highlight the pointer gets. */
+[data-row] button:focus-visible {
+  background: var(--wash);
+}
+
+/* A copy action confirms in place rather than firing a toast. */
+.btn--quiet {
+  min-width: 5.5rem;
+  justify-content: flex-start;
+}
+
+.t-data {
+  font-family: var(--font-mono), monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "zero" 1, "tnum" 1;
+}
+
+.t-figure {
+  font-family: var(--font-display), sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  font-variation-settings: "wdth" 84, "wght" 700, "opsz" 48;
+}
+
+/* ==========================================================================
+   LAYOUT
+   ========================================================================== */
+
+.shell {
+  width: 100%;
+  max-width: var(--shell);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Editorial column rule, drawn not decorated: it separates real content. */
+.plate {
+  position: relative;
+  background: var(--stock-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-plate);
+}
+
+/* Letterpress impression: paper pushed in, not a floating card shadow.
+   Tinted to the ground hue, never a pure black drop. */
+.impress {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 1px 0 rgba(20, 18, 15, 0.06), 0 14px 34px -22px rgba(20, 18, 15, 0.4);
+}
+
+[data-theme="dark"] .impress {
+  box-shadow: inset 0 1px 0 rgba(245, 241, 232, 0.07),
+    0 1px 0 rgba(0, 0, 0, 0.4), 0 14px 34px -22px rgba(0, 0, 0, 0.85);
+}
+
+/* ==========================================================================
+   CONTROLS
+   Ink fill with a paper label, contrast far past AA. Tactile press on active.
+   ========================================================================== */
+
+.btn {
+  --btn-bg: var(--ink-900);
+  --btn-fg: var(--paper-100);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  white-space: nowrap;
+  padding: 14px 24px;
+  border: 1px solid var(--ink-900);
+  border-radius: 999px;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  cursor: pointer;
+  overflow: hidden;
+  isolation: isolate;
+  transition: color 0.34s var(--ease), border-color 0.34s var(--ease);
+}
+
+/* Directional wipe: the fill enters from the cursor's own side. */
+.btn::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  background: var(--accent);
+  transform: translateX(var(--wipe-from, -101%));
+  transition: transform 0.44s var(--ease);
+}
+
+.btn:hover::before {
+  transform: translateX(0);
+}
+
+.btn:hover {
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.btn:active {
+  transform: scale(0.976);
+}
+
+.btn--line {
+  --btn-bg: transparent;
+  --btn-fg: var(--ink-900);
+  border-color: var(--rule-strong);
+}
+
+.btn--line:hover {
+  --btn-fg: #ffffff;
+  border-color: var(--ink-900);
+}
+
+.btn--line::before {
+  background: var(--ink-900);
+}
+
+.btn--quiet {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-mut);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.24s var(--ease);
+}
+
+.btn--quiet:hover {
+  color: var(--ink);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--rule);
+  background: var(--stock);
+  color: var(--ink-mut);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+/* Link with a rule that draws in from the left on hover. */
+.rule-link {
+  position: relative;
+  display: inline-block;
+}
+
+.rule-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  height: 1px;
+  width: 100%;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s var(--ease);
+}
+
+.rule-link:hover::after {
+  transform: scaleX(1);
+}
+
+/* ==========================================================================
+   PLATE EFFECTS
+   ========================================================================== */
+
+/* Cursor spotlight, fed by CSS variables written outside the React cycle. */
+.spot {
+  position: relative;
+  isolation: isolate;
+}
+
+.spot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    340px circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--accent) 10%, transparent),
+    transparent 62%
+  );
+  transition: opacity 0.4s var(--ease);
+}
+
+.spot:hover::after {
+  opacity: 1;
+}
+
+/* Registration crosshairs, the print-shop alignment marks. Real function
+   here: they mark the active specimen in the ledger. */
+.reg-mark {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  pointer-events: none;
+}
+
+.reg-mark::before,
+.reg-mark::after {
+  content: "";
+  position: absolute;
+  background: var(--accent);
+}
+
+.reg-mark::before {
+  left: 50%;
+  top: 0;
+  width: 1px;
+  height: 100%;
+  transform: translateX(-50%);
+}
+
+.reg-mark::after {
+  top: 50%;
+  left: 0;
+  height: 1px;
+  width: 100%;
+  transform: translateY(-50%);
+}
+
+/* Masked line wrapper used by SplitText reveals */
+.line-mask {
+  overflow: clip;
+}
+
+/* Screen-reader text used by split type so the sentence survives splitting */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: fixed;
+  left: 12px;
+  top: -60px;
+  z-index: 200;
+  padding: 10px 16px;
+  background: var(--ink-900);
+  color: var(--paper-100);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: top 0.24s var(--ease);
+}
+
+.skip-link:focus {
+  top: 12px;
+}
+
+/* ==========================================================================
+   THEME SWITCH
+   The one control that changes the press run. Icon-only on narrow screens,
+   labelled on desktop, and it announces its state rather than its action. */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: color 0.24s var(--ease), border-color 0.24s var(--ease),
+    background 0.24s var(--ease);
+}
+
+.theme-toggle:hover {
+  border-color: var(--ink-900);
+  background: var(--band);
+}
+
+.theme-toggle:active {
+  transform: scale(0.94);
+}
+
+.theme-toggle .tt-sun,
+.theme-toggle .tt-moon {
+  transition: transform 0.42s var(--ease), opacity 0.28s var(--ease);
+}
+
+/* The sun is only visible while the dark run is active, so the glyph always
+   shows what the switch will do, not what it is. */
+[data-theme="dark"] .tt-sun {
+  opacity: 1;
+  transform: rotate(0) scale(1);
+}
+[data-theme="dark"] .tt-moon {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.5);
+  position: absolute;
+}
+[data-theme="light"] .tt-sun {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.5);
+  position: absolute;
+}
+[data-theme="light"] .tt-moon {
+  opacity: 1;
+  transform: rotate(0) scale(1);
+}
+
+/* ==========================================================================
+   PAPER GRAIN
+   Fixed, pointer-events none, never on a scrolling container. Tuned low: the
+   tile is small and the opacity is well under a third, so it reads as stock
+   texture rather than an upscaled raster. Halved again at 2x, where a coarse
+   tile would otherwise moire.
+   ========================================================================== */
+
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-grain);
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: var(--grain-blend);
+  background-image: url("/grain.png");
+  background-size: 168px 168px;
+}
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .grain {
+    opacity: calc(var(--grain-opacity) * 0.62);
+    background-size: 112px 112px;
+  }
+}
+
+/* Skeleton shimmer for asset load states */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--stock-sunk);
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--stock-raised) 62%, transparent),
+    transparent
+  );
+  animation: shimmer 1.3s linear infinite;
+}
+
+/* ==========================================================================
+   REDUCED MOTION
+   Everything above collapses to static. No parallax, no scrub, no loops.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .grain {
+    display: none;
+  }
+}
+
+/* No-transparency preference: the grain and the blur scrims drop to solid
+   colour rather than stacking effects the reader asked to be without. */
+@media (prefers-reduced-transparency: reduce) {
+  .grain {
+    display: none;
+  }
+
+  .spot::after {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   PRINT
+   The sheet prints as itself: paper, ink, no chrome and no grain.
+   ========================================================================== */
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #14120f;
+  }
+
+  .plate {
+    border-color: #bbb;
+    box-shadow: none;
+  }
+}
