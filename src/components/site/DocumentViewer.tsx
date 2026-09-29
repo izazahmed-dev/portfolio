@@ -4,12 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  Loader2,
   Minus,
   Plus,
   ScanLine,
   X,
 } from "lucide-react";
+import { gsap, prefersReducedMotion } from "@/lib/gsap";
 import type { SourceDoc } from "@/lib/records";
 import { Watermark } from "@/components/site/Watermark";
 
@@ -250,6 +250,20 @@ export function DocumentViewer({
 
   const label = `${doc.issuer}, ${doc.title}`;
 
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+    // Same gesture as the cabinet drawer: the sheet is pulled up onto the bed.
+    // Reusing that easing and feel is what keeps the two layers reading as one
+    // mechanism rather than two components that happen to overlap.
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        panelRef.current,
+        { yPercent: 3, opacity: 0 },
+        { yPercent: 0, opacity: 1, duration: 0.5, ease: "power4.out" }
+      );
+    }, panelRef);
+    return () => ctx.revert();
+  }, []);
 
   return (
     <div
@@ -288,11 +302,17 @@ export function DocumentViewer({
             </h2>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            {/* Page controls. Hidden for single-page images, where paging is
-                meaningless. */}
+          {/*
+            One instrument bar. The circles are the theme toggle's control
+            repeated; the readouts between them are tag chips. Splitting these
+            into three separate flex rows is what made the first version read
+            as a different website.
+          */}
+          <div className="viewer-bar">
+            {/* Page controls. Hidden for single-page scans, where paging is
+                meaningless and an inert pager is just clutter. */}
             {doc.kind === "pdf" && pageCount > 1 && (
-              <div className="flex items-center gap-1">
+              <>
                 <button
                   type="button"
                   onClick={() => goTo(page - 1)}
@@ -303,7 +323,7 @@ export function DocumentViewer({
                   <ChevronLeft size={15} strokeWidth={2} />
                 </button>
                 <span
-                  className="t-data px-1.5 text-[0.6875rem] tabular-nums"
+                  className="viewer-readout viewer-readout--page"
                   aria-live="polite"
                 >
                   {page} / {pageCount}
@@ -317,32 +337,30 @@ export function DocumentViewer({
                 >
                   <ChevronRight size={15} strokeWidth={2} />
                 </button>
-              </div>
+              </>
             )}
 
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => zoom(-0.25)}
-                disabled={scale <= MIN_SCALE}
-                className="viewer-btn"
-                aria-label="Zoom out"
-              >
-                <Minus size={15} strokeWidth={2} />
-              </button>
-              <span className="t-data min-w-[3.25rem] text-center text-[0.6875rem] tabular-nums">
-                {Math.round(scale * 100)}%
-              </span>
-              <button
-                type="button"
-                onClick={() => zoom(0.25)}
-                disabled={scale >= MAX_SCALE}
-                className="viewer-btn"
-                aria-label="Zoom in"
-              >
-                <Plus size={15} strokeWidth={2} />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => zoom(-0.25)}
+              disabled={scale <= MIN_SCALE}
+              className="viewer-btn"
+              aria-label="Zoom out"
+            >
+              <Minus size={15} strokeWidth={2} />
+            </button>
+            <span className="viewer-readout" aria-live="polite">
+              {Math.round(scale * 100)}%
+            </span>
+            <button
+              type="button"
+              onClick={() => zoom(0.25)}
+              disabled={scale >= MAX_SCALE}
+              className="viewer-btn"
+              aria-label="Zoom in"
+            >
+              <Plus size={15} strokeWidth={2} />
+            </button>
 
             <button
               ref={closeRef}
@@ -359,15 +377,18 @@ export function DocumentViewer({
         {/* --- stage --- */}
         <div
           ref={scrollerRef}
-          className="relative min-h-0 flex-1 overflow-auto"
-          style={{ background: "var(--stock-sunk)" }}
+          className="viewer-bed relative min-h-0 flex-1 overflow-auto"
         >
           {status === "loading" && (
-            <div className="absolute inset-0 grid place-items-center">
-              <span className="flex items-center gap-2.5">
-                <Loader2 size={15} strokeWidth={1.9} className="animate-spin" />
-                <span className="t-label">Setting the page</span>
-              </span>
+            /* The site's loading idiom is the paper shimmer, not a spinner.
+               A spinner would be the one control on this page that belongs to
+               no other section. The sheet outline keeps the layout from
+               jumping when the page lands. */
+            <div className="flex min-h-full items-start justify-center p-4 sm:p-8">
+              <div
+                className="skeleton"
+                style={{ width: "min(100%, 760px)", aspectRatio: "1.294 / 1" }}
+              />
             </div>
           )}
 
@@ -390,11 +411,7 @@ export function DocumentViewer({
                 ref={canvasRef}
                 role="img"
                 aria-label={`${label}, page ${page} of ${pageCount || 1}`}
-                className="max-w-full"
-                style={{
-                  display: status === "ready" ? "block" : "none",
-                  boxShadow: "var(--shadow-plate)",
-                }}
+                className={`viewer-sheet ${status === "ready" ? "block" : "hidden"} max-w-full`}
                 draggable={false}
               />
               <Watermark />
@@ -415,7 +432,14 @@ export function DocumentViewer({
             {doc.issued ? ` · ${doc.issued}` : ""}
           </p>
           <p className="t-data text-[0.625rem] uppercase tracking-[0.12em]" style={{ color: "var(--ink-lbl)" }}>
-            Viewing copy · arrows page · escape closes
+            {/*
+              Advertise only the keys that work. Telling a reader to press the
+              arrows on a single-page scan teaches them to press keys that do
+              nothing, and it undercuts the rest of the label.
+            */}
+            {doc.kind === "pdf" && pageCount > 1
+              ? "Viewing copy · arrows page · escape closes"
+              : "Viewing copy · escape closes"}
           </p>
         </div>
       </div>

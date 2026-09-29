@@ -697,42 +697,95 @@
 
 /* ==========================================================================
    DOCUMENT VIEWER
-   The controls on the in-page reader. Deliberately austere: a row of square
-   ink buttons, matching the theme toggle rather than a browser toolbar, so
-   the only affordances a visitor is offered are the ones this site chose to
-   offer. There is no download control here and that is the point.
+   The reader's instrument bar. These are the same instrument as the theme
+   toggle -- a 38px ink circle, the site's only icon-only control -- and the
+   readouts between them are .tag chips. Nothing square: the whole design
+   language is circle and pill, and a square-cornered button in the middle of
+   this page would read as a different website.
+
+   There is no download control in this bar, and no print control, because
+   the reader is a canvas. The only affordances offered are the ones below.
    ========================================================================== */
+
+/* A group of controls that read as one physical instrument rather than a
+   loose row of buttons. Hairline dividers, no extra chrome. */
+.viewer-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--rule);
+  background: var(--stock);
+}
 
 .viewer-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
+  padding: 0;
   border: 1px solid var(--rule-strong);
-  border-radius: 0;
+  border-radius: 999px;
   background: transparent;
   color: var(--ink);
   cursor: pointer;
-  transition: color 0.2s var(--ease), border-color 0.2s var(--ease),
-    background-color 0.2s var(--ease);
+  transition: color 0.24s var(--ease), border-color 0.24s var(--ease),
+    background 0.24s var(--ease);
 }
 
 .viewer-btn:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent-ink);
-  background: var(--wash);
+  border-color: var(--ink-900);
+  background: var(--band);
+}
+
+.viewer-btn:active:not(:disabled) {
+  transform: scale(0.94);
 }
 
 .viewer-btn:disabled {
   /* Disabled, not hidden: a control that vanishes on page one makes the
      pager feel broken. Dimmed reads as "nothing that way". */
-  opacity: 0.32;
+  opacity: 0.28;
   cursor: not-allowed;
 }
 
-.viewer-btn:active:not(:disabled) {
-  transform: scale(0.94);
+/* Readouts. Identical treatment to .tag, sized to sit between two circles. */
+.viewer-readout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.5rem;
+  height: 38px;
+  padding: 0 0.625rem;
+  border: 1px solid var(--rule);
+  background: var(--stock);
+  color: var(--ink-sub);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The page the reader is on, set in the accent the way every other figure on
+   this page is set in the accent. */
+.viewer-readout--page {
+  color: var(--accent-ink);
+  border-color: var(--rule-strong);
+}
+
+/* The sheet of paper on the press bed. A document is white stock in both
+   press runs, so this is a fixed colour rather than a token -- an inverted
+   sheet would otherwise render a black rectangle around a white page. */
+.viewer-sheet {
+  background: #fff;
+  box-shadow: var(--shadow-plate);
+}
+
+/* The bed the sheet sits on. Sunken, so the paper reads as raised. */
+.viewer-bed {
+  background: var(--stock-sunk);
 }
 
 /* ==========================================================================
