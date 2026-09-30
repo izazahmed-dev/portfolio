@@ -215,6 +215,52 @@ export function DocumentViewer({
 
     async function load() {
       try {
+        if (doc.kind === "image") {
+          const img = new Image();
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject(new Error("Image failed to load"));
+            img.src = url;
+          });
+          if (cancelled) return;
+
+          const naturalWidth = img.naturalWidth || img.width || 1200;
+          const naturalHeight = img.naturalHeight || img.height || 800;
+          const baseWidth = Math.min(840, naturalWidth);
+          const aspectRatio = naturalHeight / naturalWidth;
+
+          docRef.current = {
+            pages: 1,
+            render: async () => {
+              if (cancelled) return;
+              const canvas = canvasRef.current;
+              if (!canvas) return;
+
+              const dpr = Math.min(window.devicePixelRatio || 1, 2);
+              const displayWidth = Math.round(baseWidth * scale);
+              const displayHeight = Math.round(displayWidth * aspectRatio);
+
+              canvas.width = Math.floor(displayWidth * dpr);
+              canvas.height = Math.floor(displayHeight * dpr);
+              canvas.style.width = `${displayWidth}px`;
+              canvas.style.height = `${displayHeight}px`;
+
+              const ctx = canvas.getContext("2d", { alpha: false });
+              if (!ctx) return;
+
+              ctx.fillStyle = "#ffffff";
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              if (cancelled) return;
+              setStatus("ready");
+            },
+          };
+
+          setPageCount(1);
+          await docRef.current.render(1);
+          return;
+        }
+
         // Imported dynamically: ~350KB of PDF.js, needed only once a visitor
         // actually opens a document. Keeping it out of the initial bundle is
         // the difference between a 185KB first load and a 540KB one.
@@ -287,7 +333,7 @@ export function DocumentViewer({
     return () => {
       cancelled = true;
     };
-  }, [url, scale, reloadKey]);
+  }, [url, scale, reloadKey, doc.kind]);
 
   // --- actions --------------------------------------------------------------
 
