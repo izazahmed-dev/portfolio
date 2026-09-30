@@ -1,11 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArrowLeft,
+  ArrowRight,
   ChevronLeft,
   ChevronRight,
+  FileText,
+  Lock,
   Minus,
   Plus,
+  RotateCw,
   ScanLine,
   X,
 } from "lucide-react";
@@ -57,6 +62,7 @@ export function DocumentViewer({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const scrimRef = useRef<HTMLButtonElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
   const docRef = useRef<{ pages: number; render: (n: number) => void } | null>(
@@ -68,6 +74,27 @@ export function DocumentViewer({
   const [pageCount, setPageCount] = useState(0);
   const [scale, setScale] = useState(1);
   const [message, setMessage] = useState("");
+  // Bumped by the reload button. The load effect depends on it, so a reload is
+  // a genuine refetch rather than a repaint of whatever is already in memory.
+  const [reloadKey, setReloadKey] = useState(0);
+
+  /*
+   * What the address bar shows.
+   *
+   * The signed URL is a bearer token: the query string is the signature. Putting
+   * it in a visible field would undo the entire point of the expiring link, since
+   * a screenshot, a screen share or a shoulder-surfer would all capture a valid
+   * grant for whatever window it is valid in. So the bar renders the real
+   * pathname and states plainly that the signature is withheld. Nothing here is
+   * a link, and there is no origin to navigate to.
+   */
+  const shownPath = useMemo(() => {
+    try {
+      return new URL(url, "https://localhost").pathname;
+    } catch {
+      return "/api/doc";
+    }
+  }, [url]);
 
   // --- open / close behaviour ----------------------------------------------
 
@@ -260,7 +287,7 @@ export function DocumentViewer({
     return () => {
       cancelled = true;
     };
-  }, [url, scale]);
+  }, [url, scale, reloadKey]);
 
   // --- actions --------------------------------------------------------------
 
@@ -287,14 +314,19 @@ export function DocumentViewer({
 
   useEffect(() => {
     if (prefersReducedMotion()) return;
-    // Same gesture as the cabinet drawer: the sheet is pulled up onto the bed.
-    // Reusing that easing and feel is what keeps the two layers reading as one
-    // mechanism rather than two components that happen to overlap.
+    // A window opens by rising and settling, not by fading in place. The easing
+    // is the same press easing the cabinet drawer uses, so the two layers still
+    // read as one mechanism rather than two components that happen to overlap.
     const ctx = gsap.context(() => {
       gsap.fromTo(
+        scrimRef.current,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.34, ease: "power2.out" }
+      );
+      gsap.fromTo(
         panelRef.current,
-        { yPercent: 3, opacity: 0 },
-        { yPercent: 0, opacity: 1, duration: 0.5, ease: "power4.out" }
+        { y: 14, scale: 0.985, opacity: 0 },
+        { y: 0, scale: 1, opacity: 1, duration: 0.46, ease: "power4.out" }
       );
     }, panelRef);
     return () => ctx.revert();
@@ -302,111 +334,132 @@ export function DocumentViewer({
 
   return (
     <div
-      className="fixed inset-0 flex flex-col"
+      className="fixed inset-0 flex items-center justify-center p-3 sm:p-6"
       style={{ zIndex: "var(--z-sheet)" as unknown as number }}
       role="dialog"
       aria-modal="true"
       aria-label={`${doc.title}, full document`}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {/* Scrim is not interactive: the viewer is the whole surface, and a
-          click-outside-to-close here would fight the scroller. */}
-      <div
+      {/*
+        A floating window is dismissed by clicking away from it, so the scrim is
+        a real control here. It was deliberately inert when the reader covered
+        the whole viewport, where a stray click would have fought the scroller.
+        tabIndex -1 keeps it out of the focus order: Escape and the close button
+        are the labelled routes, and a full-bleed button in the tab order is a
+        trap for screen reader users.
+      */}
+      <button
+        ref={scrimRef}
+        type="button"
+        tabIndex={-1}
         aria-hidden
-        className="absolute inset-0"
-        style={{ background: "var(--ink-900)" }}
+        onClick={onClose}
+        className="viewer-scrim absolute inset-0 h-full w-full"
       />
 
       <div
         ref={panelRef}
-        className="relative flex min-h-0 flex-1 flex-col"
-        style={{ background: "var(--stock-sunk)" }}
+        className="viewer-window relative flex min-h-0 w-full max-w-[1180px] flex-col overflow-hidden"
       >
+        {/* --- tab strip --- */}
+        <div className="viewer-chrome viewer-chrome--tabs">
+          {/*
+            Traffic lights. Decorative, so they are spans rather than buttons:
+            three controls that do nothing would be worse than no controls, and
+            a focusable dot invites a keyboard user to press it.
+          */}
+          <span className="viewer-lights" aria-hidden>
+            <i />
+            <i />
+            <i />
+          </span>
+
+          <div className="viewer-tab">
+            <FileText size={12.5} strokeWidth={1.9} aria-hidden />
+            <span className="truncate">{doc.title}</span>
+          </div>
+        </div>
+
         {/* --- toolbar --- */}
-        <div
-          className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 px-4 py-3 sm:px-6"
-          style={{
-            background: "var(--stock-raised)",
-            borderBottom: "1px solid var(--rule-strong)",
-          }}
-        >
-          <div className="min-w-0 flex-1">
-            <p className="t-label truncate">{doc.category}</p>
-            <h2 className="t-h3 mt-1 truncate" style={{ fontSize: "0.9375rem" }}>
-              {doc.title}
-            </h2>
+        <div className="viewer-chrome viewer-chrome--bar">
+          <div className="flex items-center gap-1">
+            {/*
+              Back and forward are present and permanently disabled, for the same
+              reason a disabled pager stays visible: a control that appears only
+              when it works makes the window look broken. This viewer has no
+              history, so "nowhere to go" is the truth.
+            */}
+            <button
+              type="button"
+              disabled
+              className="viewer-nav"
+              aria-label="Back, unavailable"
+            >
+              <ArrowLeft size={15} strokeWidth={2} />
+            </button>
+            <button
+              type="button"
+              disabled
+              className="viewer-nav"
+              aria-label="Forward, unavailable"
+            >
+              <ArrowRight size={15} strokeWidth={2} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setReloadKey((k) => k + 1)}
+              className="viewer-nav"
+              aria-label="Reload document"
+            >
+              <RotateCw size={14} strokeWidth={2} />
+            </button>
           </div>
 
-          {/*
-            One instrument bar. The circles are the theme toggle's control
-            repeated; the readouts between them are tag chips. Splitting these
-            into three separate flex rows is what made the first version read
-            as a different website.
-          */}
-          <div className="viewer-bar">
-            {/* Page controls. Hidden for single-page scans, where paging is
-                meaningless and an inert pager is just clutter. */}
-            {doc.kind === "pdf" && pageCount > 1 && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => goTo(page - 1)}
-                  disabled={page <= 1}
-                  className="viewer-btn"
-                  aria-label="Previous page"
-                >
-                  <ChevronLeft size={15} strokeWidth={2} />
-                </button>
-                <span
-                  className="viewer-readout viewer-readout--page"
-                  aria-live="polite"
-                >
-                  {page} / {pageCount}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => goTo(page + 1)}
-                  disabled={page >= pageCount}
-                  className="viewer-btn"
-                  aria-label="Next page"
-                >
-                  <ChevronRight size={15} strokeWidth={2} />
-                </button>
-              </>
-            )}
+          {/* The address bar. Zoom lives at its right edge, where a browser
+              puts it, which is also what keeps the window free of a second
+              floating group of buttons. */}
+          <div className="viewer-omni">
+            <Lock size={12} strokeWidth={2} aria-hidden />
+            <span className="truncate">{shownPath}</span>
+            <span className="viewer-omni__sig" aria-hidden>
+              signature withheld
+            </span>
+
+            <span className="viewer-omni__split" aria-hidden />
 
             <button
               type="button"
               onClick={() => zoom(-0.25)}
               disabled={scale <= MIN_SCALE}
-              className="viewer-btn"
+              className="viewer-nav viewer-nav--tight"
               aria-label="Zoom out"
             >
-              <Minus size={15} strokeWidth={2} />
+              <Minus size={14} strokeWidth={2} />
             </button>
-            <span className="viewer-readout" aria-live="polite">
+            <span className="viewer-readout viewer-readout--flush" aria-live="polite">
               {Math.round(scale * 100)}%
             </span>
             <button
               type="button"
               onClick={() => zoom(0.25)}
               disabled={scale >= MAX_SCALE}
-              className="viewer-btn"
+              className="viewer-nav viewer-nav--tight"
               aria-label="Zoom in"
             >
-              <Plus size={15} strokeWidth={2} />
-            </button>
-
-            <button
-              ref={closeRef}
-              type="button"
-              onClick={onClose}
-              className="viewer-btn"
-              aria-label="Close document viewer"
-            >
-              <X size={16} strokeWidth={2} />
+              <Plus size={14} strokeWidth={2} />
             </button>
           </div>
+
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            className="viewer-btn"
+            aria-label="Close document viewer"
+          >
+            <X size={16} strokeWidth={2} />
+          </button>
         </div>
 
         {/* --- stage ---
@@ -469,19 +522,53 @@ export function DocumentViewer({
           </div>
         </div>
 
-        {/* --- footer: the honest note --- */}
-        <div
-          className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:px-6"
-          style={{
-            background: "var(--stock-raised)",
-            borderTop: "1px solid var(--rule)",
-          }}
-        >
-          <p className="t-data text-[0.625rem] uppercase tracking-[0.12em]" style={{ color: "var(--ink-lbl)" }}>
-            {doc.reference ? `Reference ${doc.reference}` : "No reference printed"}
-            {doc.issued ? ` · ${doc.issued}` : ""}
-          </p>
-          <p className="t-data text-[0.625rem] uppercase tracking-[0.12em]" style={{ color: "var(--ink-lbl)" }}>
+        {/* --- status bar: the pager and the honest note --- */}
+        <div className="viewer-chrome viewer-chrome--status">
+          <div className="flex min-w-0 items-center gap-2">
+            {/* The pager lives here rather than in the toolbar. A page control
+                is not a browser control, and the status bar is the one strip in
+                a window that is not pretending to be navigation. */}
+            {doc.kind === "pdf" && pageCount > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => goTo(page - 1)}
+                  disabled={page <= 1}
+                  className="viewer-nav viewer-nav--tight"
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft size={14} strokeWidth={2} />
+                </button>
+                <span
+                  className="viewer-readout viewer-readout--page viewer-readout--flush"
+                  aria-live="polite"
+                >
+                  {page} / {pageCount}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => goTo(page + 1)}
+                  disabled={page >= pageCount}
+                  className="viewer-nav viewer-nav--tight"
+                  aria-label="Next page"
+                >
+                  <ChevronRight size={14} strokeWidth={2} />
+                </button>
+                <span className="viewer-omni__split" aria-hidden />
+              </>
+            )}
+            <p
+              className="t-data truncate text-[0.625rem] uppercase tracking-[0.12em]"
+              style={{ color: "var(--ink-lbl)" }}
+            >
+              {doc.reference ? `Reference ${doc.reference}` : "No reference printed"}
+              {doc.issued ? ` · ${doc.issued}` : ""}
+            </p>
+          </div>
+          <p
+            className="t-data shrink-0 text-[0.625rem] uppercase tracking-[0.12em]"
+            style={{ color: "var(--ink-lbl)" }}
+          >
             {/*
               Advertise only the keys that work. Telling a reader to press the
               arrows on a single-page scan teaches them to press keys that do

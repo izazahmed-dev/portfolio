@@ -39,6 +39,8 @@ tsconfig.tsbuildinfo
 
 # local dev server output
 server.log
+srv.log
+*.log
 npm-debug.log*
 yarn-error.log*
 
