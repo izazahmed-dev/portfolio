@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   poweredByHeader: false,
+  outputFileTracingIncludes: {
+    "/api/doc/**": ["./secured/**/*"],
+    "/api/preview/**": ["./secured/**/*"],
+  },
 
   // Documents and previews are served by route handlers that check a signed,
   // expiring token before touching the filesystem. They are NEVER public
