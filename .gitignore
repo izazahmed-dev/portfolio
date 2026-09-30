@@ -44,11 +44,8 @@ srv.log
 npm-debug.log*
 yarn-error.log*
 
-# documents cabinet: the originals and their previews are no longer public
-# assets. They live in /secured and are streamed by the server through the
-# /doc and /preview routes, so they must never land in a build artefact, a
-# CDN cache, or a public repository mirror.
-/secured
+# documents cabinet: streamed by the server through /api/doc and /api/preview
+# with signed expiring tokens. Tracked so deployment hosts have access to the files.
 
 # retired site versions: 751 files, ~26MB of dead frames and a superseded
 # component tree. Kept on disk, deliberately out of history.
