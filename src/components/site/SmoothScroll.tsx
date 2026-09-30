@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import type Lenis from "lenis";
 import { gsap, ScrollTrigger, prefersReducedMotion } from "@/lib/gsap";
+import { registerLenis } from "@/lib/scrollLock";
 
 /**
  * Lenis smooth scroll, wired to GSAP's ticker so Lenis and ScrollTrigger share
@@ -34,6 +35,14 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
 
       lenis = instance;
       instance.on("scroll", ScrollTrigger.update);
+
+      /*
+       * Hand the instance to the scroll lock. Any overlay that is already open
+       * (the reader can be summoned before Lenis finishes importing) stops this
+       * immediately, so the page cannot scroll behind a dialog that is already
+       * covering it.
+       */
+      registerLenis(instance);
 
       /*
        * In-page links.
@@ -91,6 +100,9 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
       detach?.();
       if (ticker) gsap.ticker.remove(ticker);
       gsap.ticker.lagSmoothing(500, 33);
+      // Clear before destroy, so a lock taken during teardown does not keep a
+      // reference to an instance that is about to stop existing.
+      registerLenis(null);
       lenis?.destroy();
     };
   }, []);

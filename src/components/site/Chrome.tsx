@@ -5,6 +5,7 @@ import { ArrowUpRight, Menu, X } from "lucide-react";
 import { gsap, useGSAP, prefersReducedMotion } from "@/lib/gsap";
 import { useDirectionalWipe } from "@/components/motion/Kinetic";
 import { ThemeToggle } from "@/components/site/ThemeToggle";
+import { useScrollLock } from "@/lib/scrollLock";
 import { PROFILE } from "@/lib/records";
 
 /**
@@ -63,12 +64,9 @@ export function RunningHead() {
     });
   }, []);
 
-  useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open]);
+  // Same refcounted lock as the other two overlays. The nav sheet is a
+  // full-height panel, so the page must not drift behind it either.
+  useScrollLock(open);
 
   useEffect(() => {
     if (!open) return;
@@ -207,7 +205,8 @@ export function RunningHead() {
           <div
             ref={sheetRef}
             id="nav-sheet"
-            className="relative ml-auto flex h-full w-[88%] max-w-sm flex-col justify-between p-7"
+            data-lenis-prevent
+            className="relative ml-auto flex h-full w-[88%] max-w-sm flex-col justify-between overflow-y-auto overscroll-contain p-7"
             style={{ background: "var(--stock-raised)", borderLeft: "1px solid var(--rule-strong)" }}
           >
             <div>

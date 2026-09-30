@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { gsap, prefersReducedMotion } from "@/lib/gsap";
+import { useScrollLock } from "@/lib/scrollLock";
 import type { SourceDoc } from "@/lib/records";
 import { Watermark } from "@/components/site/Watermark";
 
@@ -70,16 +71,21 @@ export function DocumentViewer({
 
   // --- open / close behaviour ----------------------------------------------
 
+  // The page behind a full-screen reader must not move. This replaces the
+  // body-overflow hack, which could not hold against Lenis -- see scrollLock.
+  useScrollLock();
+
   useEffect(() => {
     // Remember what had focus so it can be handed back on close.
     triggerRef.current = document.activeElement as HTMLElement | null;
 
-    document.body.style.overflow = "hidden";
     closeRef.current?.focus();
 
     return () => {
-      document.body.style.overflow = "";
-      triggerRef.current?.focus();
+      // preventScroll: handing focus back to the card would otherwise scroll
+      // the page to bring that button into view, so dismissing the reader
+      // teleported the reader to wherever the trigger happened to sit.
+      triggerRef.current?.focus({ preventScroll: true });
     };
   }, []);
 
@@ -90,22 +96,51 @@ export function DocumentViewer({
         onClose();
         return;
       }
+
+      /*
+       * Two classes of key this handler must not swallow.
+       *
+       * A focused control owns Space and Enter, and preventDefault on keydown
+       * is precisely what stops a focused button from activating. Tabbing to
+       * "Zoom in" and pressing Space used to page the document instead of
+       * zooming, so part of the toolbar was unreachable by keyboard.
+       *
+       * The stage is focusable so it can be scrolled without a pointer, and
+       * once it holds focus the browser scrolls it natively -- which is what the
+       * arrow keys would otherwise be doing by hand, badly.
+       */
+      const target = e.target as HTMLElement | null;
+      if (
+        target?.closest(
+          'button, a[href], input, select, textarea, [contenteditable=""], [contenteditable="true"]'
+        ) ||
+        target === scrollerRef.current
+      ) {
+        return;
+      }
+
       if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") {
+        // The pager is inert on a single-page scan, so claiming the scroll keys
+        // there would swallow every one of them for no visible effect.
+        if (pageCount <= 1) return;
         e.preventDefault();
         setPage((p) => Math.min(pageCount, p + 1));
         return;
       }
       if (e.key === "ArrowLeft" || e.key === "PageUp") {
+        if (pageCount <= 1) return;
         e.preventDefault();
         setPage((p) => Math.max(1, p - 1));
         return;
       }
       if (e.key === "Home") {
+        if (pageCount <= 1) return;
         e.preventDefault();
         setPage(1);
         return;
       }
       if (e.key === "End") {
+        if (pageCount <= 1) return;
         e.preventDefault();
         setPage(pageCount);
         return;
@@ -374,10 +409,25 @@ export function DocumentViewer({
           </div>
         </div>
 
-        {/* --- stage --- */}
+        {/* --- stage ---
+            data-lenis-prevent is load-bearing. Lenis listens on the window and
+            takes every wheel event to drive the page, so without this attribute
+            the wheel over a long document scrolled the page behind the reader
+            and the sheet itself never moved. This hands those events back to
+            the native scroller. overscroll-contain stops the pane from chaining
+            its leftover momentum to the page once the reader hits the end. */}
         <div
           ref={scrollerRef}
-          className="viewer-bed relative min-h-0 flex-1 overflow-auto"
+          data-lenis-prevent
+          // Focusable so the sheet can be scrolled without a pointer. A scrollable
+          // region that is not in the tab order is unreachable by keyboard, and
+          // this one is the only way to reach the bottom of a long page at zoom.
+          // The visible focus ring is the global :focus-visible outline -- adding
+          // a local one here would have doubled it up.
+          tabIndex={0}
+          role="group"
+          aria-label={`${label}, page ${page} of ${pageCount || 1}. Scrollable.`}
+          className="viewer-bed relative min-h-0 flex-1 overflow-auto overscroll-contain"
         >
           {status === "loading" && (
             /* The site's loading idiom is the paper shimmer, not a spinner.

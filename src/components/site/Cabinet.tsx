@@ -22,6 +22,7 @@ import {
 import { DOCS, type SourceDoc } from "@/lib/records";
 import { useDocLink } from "@/components/site/DocumentAccess";
 import { Watermark } from "@/components/site/Watermark";
+import { useScrollLock } from "@/lib/scrollLock";
 import {
   useDocumentViewerOpen,
   useOpenDocument,
@@ -384,10 +385,13 @@ function Drawer({
   const drawerLink = useDocLink(doc?.id ?? "");
   const viewerOpen = useDocumentViewerOpen();
 
+  // Refcounted, so opening the reader on top of this drawer does not release
+  // the lock when the drawer later unmounts. See scrollLock.
+  useScrollLock(!!doc);
+
   useEffect(() => {
     if (!doc) return;
 
-    document.body.style.overflow = "hidden";
     closeBtn.current?.focus();
 
     const onKey = (e: KeyboardEvent) => {
@@ -436,7 +440,6 @@ function Drawer({
     }
 
     return () => {
-      document.body.style.overflow = "";
       window.removeEventListener("keydown", onKey);
     };
     // viewerOpen is a dependency, not a captured value. The reader is mounted
@@ -466,7 +469,8 @@ function Drawer({
       />
       <div
         ref={panel}
-        className="plate relative max-h-[92dvh] w-full max-w-4xl overflow-y-auto"
+        data-lenis-prevent
+        className="plate relative max-h-[92dvh] w-full max-w-4xl overflow-y-auto overscroll-contain"
         style={{ background: "var(--stock-raised)", boxShadow: "var(--shadow-plate)" }}
       >
         <div
