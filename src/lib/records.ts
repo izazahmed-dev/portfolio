@@ -62,6 +62,8 @@ export interface Repo {
   name: string;
   url: string;
   tagline: string;
+  /** concise problem-to-outcome summary shown before engineering details */
+  outcome: string;
   /** what problem it solves, in plain language */
   premise: string;
   /** engineering decisions worth defending in an interview */
@@ -86,7 +88,7 @@ export const PROFILE = {
   campus: "R.S.M. Nagar, Kavaraipettai 601 206, Thiruvallur District, Tamil Nadu",
   batch: "2025 to 2029",
   home: "Tirupati, Andhra Pradesh",
-  email: "25al076@rmd.ac.in",
+  email: "izazahmed.dev@gmail.com",
   phone: "+91 99856 56586",
   github: "https://github.com/izazahmed-dev",
   githubHandle: "izazahmed-dev",
@@ -381,6 +383,8 @@ export const REPOS: Repo[] = [
     name: "CivicPulse",
     url: "https://github.com/izazahmed-dev/CivicPulse",
     tagline: "Civic complaints in eleven languages, by voice if typing is the barrier",
+    outcome:
+      "A multilingual reporting path that turns a spoken complaint into a triaged authority-board case, with citizen tracking instead of a silent submission box.",
     premise:
       "Municipal reporting in India assumes a literate English speaker with a smartphone and patience. CivicPulse removes all three assumptions. A citizen speaks a complaint about water, roads, electricity or sanitation in their own language, and it lands on an authority board already triaged.",
     decisions: [
@@ -435,6 +439,8 @@ export const REPOS: Repo[] = [
     name: "Posture and Blink Monitor",
     url: "https://github.com/izazahmed-dev/Posture-and-Blink-monitor",
     tagline: "A webcam that tells you when your neck has quietly given up",
+    outcome:
+      "A local-first webcam monitor that combines posture and blink signals into timely alerts while keeping camera data on the machine.",
     premise:
       "Slouching and eye strain are slow injuries with no alarm attached. This runs on the webcam already in the laptop, reads facial and upper body landmarks locally, and raises a flag the moment posture or blink rate crosses a defined threshold. Nothing leaves the machine.",
     decisions: [

@@ -128,7 +128,7 @@ function Index({
   return (
     <div ref={root}>
       <div
-        className="grid grid-cols-[30px_1fr_auto] gap-x-5 pb-3"
+        className="grid grid-cols-[30px_minmax(0,1fr)_minmax(0,auto)] gap-x-5 pb-3"
         style={{ borderBottom: "1px solid var(--rule-strong)" }}
       >
         <span className="t-label">No</span>
@@ -176,7 +176,7 @@ function Row({
           onOpen();
         }}
         aria-pressed={active}
-        className="group relative grid w-full grid-cols-[30px_1fr_auto] items-baseline gap-x-5 py-[18px] text-left"
+        className="group relative grid w-full grid-cols-[30px_minmax(0,1fr)_minmax(0,auto)] items-baseline gap-x-5 py-[18px] text-left"
         style={{
           background: active ? "var(--wash)" : "transparent",
           paddingInline: active ? "12px" : "0px",
@@ -242,7 +242,7 @@ function Row({
         </span>
 
         <span
-          className="t-data whitespace-nowrap text-right text-[0.625rem]"
+          className="t-data max-w-[9rem] break-words text-right text-[0.625rem] sm:whitespace-nowrap"
           style={{ color: active ? "var(--ink-sub)" : "var(--ink-lbl)" }}
         >
           {doc.reference ?? "none printed"}
