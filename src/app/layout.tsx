@@ -50,12 +50,14 @@ export const viewport: Viewport = {
 
 const TITLE = `${PROFILE.legalName}, AI and ML undergraduate, verified record`;
 const DESCRIPTION =
-  "Portfolio and document cabinet of Peddapalem Izaz Ahmed. B.Tech AI and Machine Learning at R.M.D. Engineering College, batch 2025 to 2029. Two shipped projects and ten source documents, each one openable.";
+  "AI and ML portfolio of Peddapalem Izaz Ahmed: CivicPulse turns spoken complaints into triaged cases across eleven languages, alongside a local-first computer-vision monitor.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://izazahmed.dev"),
   title: TITLE,
   description: DESCRIPTION,
+  category: "technology",
+  formatDetection: { telephone: false },
   applicationName: "Izaz Ahmed, document cabinet",
   authors: [{ name: PROFILE.legalName, url: PROFILE.github }],
   creator: PROFILE.legalName,
@@ -88,14 +90,14 @@ export const metadata: Metadata = {
         url: "/og.avif",
         width: 1200,
         height: 630,
-        alt: "Izaz Ahmed, AI and ML undergraduate. Ten source documents, two shipped projects.",
+        alt: "Izaz Ahmed, AI and ML undergraduate. CivicPulse, a multilingual civic reporting project.",
         type: "image/avif",
       },
       {
         url: "/og.png",
         width: 1200,
         height: 630,
-        alt: "Izaz Ahmed, AI and ML undergraduate. Ten source documents, two shipped projects.",
+        alt: "Izaz Ahmed, AI and ML undergraduate. CivicPulse, a multilingual civic reporting project.",
         type: "image/png",
       },
     ],
@@ -105,8 +107,8 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     images: [
-      { url: "/og.avif", alt: "Izaz Ahmed, AI and ML undergraduate" },
-      { url: "/og.png", alt: "Izaz Ahmed, AI and ML undergraduate" },
+      { url: "/og.avif", alt: "Izaz Ahmed, AI and ML undergraduate building CivicPulse" },
+      { url: "/og.png", alt: "Izaz Ahmed, AI and ML undergraduate building CivicPulse" },
     ],
   },
   robots: {

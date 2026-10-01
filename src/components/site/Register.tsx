@@ -190,8 +190,8 @@ export function Register() {
           {/* Marks, grouped rather than hairlined on every row */}
           <div className="lg:col-span-8">
             <div
-              className="reg-head grid gap-x-6 pb-3"
-              style={{ gridTemplateColumns: grid, borderBottom: "1px solid var(--rule-strong)" }}
+              className={`reg-head reg-grid grid gap-x-6 pb-3 ${twoCol ? "reg-grid--two" : ""}`}
+              style={{ "--reg-grid": grid, borderBottom: "1px solid var(--rule-strong)" } as React.CSSProperties}
             >
               <span className="t-label">Subject</span>
               <span className="t-label text-right">{current.columns[0]}</span>
@@ -202,13 +202,13 @@ export function Register() {
               {current.rows.map((r, i) => (
                 <li
                   key={r.subject}
-                  className="reg-row grid items-baseline gap-x-6 py-[13px]"
+                  className={`reg-row reg-grid grid items-baseline gap-x-6 py-[13px] ${twoCol ? "reg-grid--two" : ""}`}
                   style={{
-                    gridTemplateColumns: grid,
+                    "--reg-grid": grid,
                     background: i % 2 === 1 ? "var(--band)" : "transparent",
                     paddingInline: "12px",
                     marginInline: "-12px",
-                  }}
+                  } as React.CSSProperties}
                 >
                   <span className="text-[0.9375rem]" style={{ color: "var(--ink-sub)" }}>
                     {r.subject}
@@ -220,11 +220,11 @@ export function Register() {
             </ul>
 
             <div
-              className="mt-3 grid items-baseline gap-x-6 pt-4"
+              className="reg-total mt-3 grid items-baseline gap-x-6 pt-4"
               style={{
-                gridTemplateColumns: twoCol ? "minmax(0,1fr) 232px" : "minmax(0,1fr) 116px",
+                "--reg-total-grid": twoCol ? "minmax(0,1fr) 232px" : "minmax(0,1fr) 116px",
                 borderTop: "1px solid var(--rule-strong)",
-              }}
+              } as React.CSSProperties}
             >
               <span className="t-label">{current.totalLabel}</span>
               <Odometer

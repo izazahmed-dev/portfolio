@@ -148,6 +148,21 @@ export function TitlePage() {
                 <ArrowUpRight size={13} strokeWidth={2.2} />
               </a>
             </div>
+            <div
+              className="mt-6 inline-flex items-center gap-2.5"
+              style={{ color: "var(--ink-mut)" }}
+              role="status"
+              aria-label="Available for summer 2027 AI and machine learning internships"
+            >
+              <span
+                aria-hidden
+                className="h-2 w-2 rounded-full"
+                style={{ background: "var(--accent)", boxShadow: "0 0 0 4px var(--wash)" }}
+              />
+              <span className="t-data text-[0.625rem] uppercase tracking-[0.14em]">
+                Available for summer 2027 AI / ML internships
+              </span>
+            </div>
           </div>
 
           {/* Portrait: columns 10 to 12, a counterweight rather than a hero image */}

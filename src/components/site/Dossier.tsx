@@ -26,7 +26,8 @@ export function Dossier() {
             with a headline plus a paragraph, so this one is allowed to be
             the raw statement: the two cases below carry their own argument
             and do not need an introduction to justify them. */}
-        <div className="max-w-[20ch]">
+        <div className="max-w-[28ch]">
+          <p className="t-label mb-4">AI systems / human outcomes</p>
           <TypeSlug as="h2" className="t-h2">
             Two things I built and can defend line by line.
           </TypeSlug>
@@ -140,6 +141,15 @@ function Case({ repo }: { repo: Repo }) {
           <ProseReveal as="p" className="t-body mt-6">
             {repo.premise}
           </ProseReveal>
+          <div
+            className="mt-7 max-w-[58ch] border-l-2 py-1 pl-4"
+            style={{ borderColor: "var(--accent)" }}
+          >
+            <p className="t-label">Problem → outcome</p>
+            <p className="mt-2 text-[0.9375rem] leading-relaxed" style={{ color: "var(--ink-sub)" }}>
+              {repo.outcome}
+            </p>
+          </div>
 
           <a
             ref={wipe}
