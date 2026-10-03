@@ -341,7 +341,9 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: contextGuard }} />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(personJsonLd).replace(/</g, "\\u003c"),
+          }}
         />
         <script
           // Determines the press run before React exists. No flash, no

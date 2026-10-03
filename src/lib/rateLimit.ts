@@ -84,11 +84,12 @@ export function rateLimit(
  * attacker-controlled, which at worst lets someone move their own counter.
  */
 export function clientKey(headers: Headers, route: string): string {
-  const fwd = headers.get("x-forwarded-for");
+  // Prefer Cloudflare / proxy headers over caller-controlled X-Forwarded-For
+  // to avoid rate limit key spoofing.
   const ip =
-    fwd?.split(",")[0]?.trim() ||
-    headers.get("x-real-ip") ||
     headers.get("cf-connecting-ip") ||
+    headers.get("x-real-ip") ||
+    headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     "unknown";
   return `${route}:${ip}`;
 }
