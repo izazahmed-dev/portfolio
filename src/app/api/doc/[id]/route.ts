@@ -102,6 +102,7 @@ export async function GET(
         "Cache-Control": "private, no-store, max-age=0",
         "X-Content-Type-Options": "nosniff",
         "Content-Security-Policy": "default-src 'none'; sandbox",
+        "X-Robots-Tag": "noindex, nofollow, noarchive",
         Vary: "Cookie",
       },
     });

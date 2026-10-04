@@ -34,3 +34,9 @@ The portfolio already has a rare point of view: a letterpress “evidence editio
 ## Validation baseline
 
 Before this revision, `npm run check` passed: TypeScript, ESLint, and `next build`. The dependency audit reported two advisories (one moderate, one high); this should be reviewed before production deployment rather than auto-fixing blindly because the project intentionally avoids runtime image optimization.
+
+## Security status — 2026-10-04
+
+The previous wording that described the evidence tree as private was inaccurate: the public repository tracked 20 files under `secured/`, and those files were present in public Git history at commit `93c71b4`. HMAC-protected routes cannot protect material that is already downloadable from GitHub. See [`SECURITY.md`](./SECURITY.md) for the full threat model and remediation plan.
+
+This revision removes `secured/` from the Git index, ignores it for future commits, removes its Next output-tracing inclusion, requires `SECURED_DIR` in production, adds a CSP/security-header baseline, marks protected responses `noindex`, and prefers proxy-normalized client address headers for rate limiting. The public history has now been rewritten and the cleaned `master` branch force-pushed. GitHub may continue serving unreachable old commit objects temporarily while its garbage collection completes.

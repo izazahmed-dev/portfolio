@@ -84,11 +84,14 @@ export function rateLimit(
  * attacker-controlled, which at worst lets someone move their own counter.
  */
 export function clientKey(headers: Headers, route: string): string {
-  const fwd = headers.get("x-forwarded-for");
+  // Prefer the proxy-normalised address. A caller can prepend arbitrary values
+  // to x-forwarded-for on some hosts; using that first would let one attacker
+  // rotate through unlimited buckets. Only trust x-forwarded-for as fallback
+  // when the hosting proxy does not provide a canonical address header.
   const ip =
-    fwd?.split(",")[0]?.trim() ||
     headers.get("x-real-ip") ||
     headers.get("cf-connecting-ip") ||
+    headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     "unknown";
   return `${route}:${ip}`;
 }

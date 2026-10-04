@@ -44,8 +44,10 @@ srv.log
 npm-debug.log*
 yarn-error.log*
 
-# documents cabinet: streamed by the server through /api/doc and /api/preview
-# with signed expiring tokens. Tracked so deployment hosts have access to the files.
+# documents cabinet: NEVER commit originals or previews. Production must mount
+# them from private storage and set SECURED_DIR. Removing a file from the index
+# does not erase old public Git history; purge that history before relying on it.
+/secured/
 
 # retired site versions: 751 files, ~26MB of dead frames and a superseded
 # component tree. Kept on disk, deliberately out of history.
@@ -54,4 +56,3 @@ _archive
 # secret that signs document URLs. Never commit a real one.
 /.env
 /.env*.local
-

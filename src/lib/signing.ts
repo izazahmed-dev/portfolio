@@ -10,12 +10,21 @@ import path from "node:path";
 
 /**
  * Absolute path to the private directory, resolved once at module load.
- * process.cwd() is the app root on every mainstream host; SECURED_DIR allows
- * an override for hosts that stage files somewhere else.
+ *
+ * Production must name an external/private storage location explicitly. This
+ * prevents a deployment from silently falling back to a repository directory
+ * and accidentally shipping identity documents in a public build artifact.
  */
+const configuredSecuredDir = process.env.SECURED_DIR;
+if (process.env.NODE_ENV === "production" && !configuredSecuredDir) {
+  throw new Error(
+    "SECURED_DIR must be configured in production; document storage must not default to the repository."
+  );
+}
+
 export const SECURED_ROOT = path.resolve(
   process.cwd(),
-  process.env.SECURED_DIR ?? "secured"
+  configuredSecuredDir ?? "secured"
 );
 
 /**

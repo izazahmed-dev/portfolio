@@ -11,10 +11,8 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   poweredByHeader: false,
-  outputFileTracingIncludes: {
-    "/api/doc/**": ["./secured/**/*"],
-    "/api/preview/**": ["./secured/**/*"],
-  },
+  // Do not trace evidence files into the deployment artifact. Production
+  // supplies SECURED_DIR from private storage instead.
 
   // Documents and previews are served by route handlers that check a signed,
   // expiring token before touching the filesystem. They are NEVER public
@@ -33,6 +31,11 @@ const nextConfig: NextConfig = {
           {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+          },
+          {
+            key: "Content-Security-Policy",
+            value:
+              "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self'",
           },
           {
             key: "Strict-Transport-Security",
