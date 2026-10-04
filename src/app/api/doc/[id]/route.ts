@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { DOCS } from "@/lib/records";
-import { verifyToken, resolveSecuredPath } from "@/lib/signing";
+import { verifyToken } from "@/lib/signing";
 import { rateLimit, clientKey, logAccess } from "@/lib/rateLimit";
+import { readPrivateAsset } from "@/lib/privateStorage";
 
 /**
  * /api/doc/[id]
@@ -42,7 +42,16 @@ export async function GET(
   const { id } = await params;
   const ip = clientKey(req.headers, "doc");
 
-  const limit = rateLimit(ip, 30, 60_000);
+  let limit;
+  try {
+    limit = await rateLimit(ip, 30, 60_000);
+  } catch {
+    logAccess("deny", id, ip);
+    return NextResponse.json(
+      { error: "Protected document service is not configured." },
+      { status: 503, headers: { "Retry-After": "60" } }
+    );
+  }
   if (!limit.ok) {
     logAccess("deny", id, ip);
     return NextResponse.json(
@@ -75,16 +84,8 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // The record's own path is validated against the subdirectory allowlist, so
-  // the join below is provably confined to SECURED_ROOT.
-  const target = resolveSecuredPath(doc.file);
-  if (!target) {
-    logAccess("not-found", id, ip);
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-
   try {
-    const buf = await readFile(target);
+    const buf = await readPrivateAsset(doc.file, MAX_BYTES);
     if (buf.byteLength > MAX_BYTES) {
       return NextResponse.json({ error: "Document too large" }, { status: 413 });
     }

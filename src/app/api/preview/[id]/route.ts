@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readFile } from "node:fs/promises";
 import { DOCS } from "@/lib/records";
-import { verifyToken, resolveSecuredPath } from "@/lib/signing";
+import { verifyToken } from "@/lib/signing";
 import { rateLimit, clientKey, logAccess } from "@/lib/rateLimit";
+import { readPrivateAsset } from "@/lib/privateStorage";
 
 /**
  * /api/preview/[id]
@@ -29,7 +29,16 @@ export async function GET(
   const ip = clientKey(req.headers, "preview");
 
   // Previews are lighter and more numerous, so the ceiling is higher.
-  const limit = rateLimit(ip, 120, 60_000);
+  let limit;
+  try {
+    limit = await rateLimit(ip, 120, 60_000);
+  } catch {
+    logAccess("deny", id, ip);
+    return NextResponse.json(
+      { error: "Protected preview service is not configured." },
+      { status: 503, headers: { "Retry-After": "60" } }
+    );
+  }
   if (!limit.ok) {
     logAccess("deny", id, ip);
     return NextResponse.json(
@@ -55,14 +64,8 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const target = resolveSecuredPath(doc.preview);
-  if (!target) {
-    logAccess("not-found", id, ip);
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-
   try {
-    const buf = await readFile(target);
+    const buf = await readPrivateAsset(doc.preview, MAX_BYTES);
     if (buf.byteLength > MAX_BYTES) {
       return NextResponse.json({ error: "Preview too large" }, { status: 413 });
     }

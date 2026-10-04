@@ -16,9 +16,15 @@ import path from "node:path";
  * and accidentally shipping identity documents in a public build artifact.
  */
 const configuredSecuredDir = process.env.SECURED_DIR;
-if (process.env.NODE_ENV === "production" && !configuredSecuredDir) {
+const configuredS3 = Boolean(
+  process.env.S3_BUCKET &&
+    process.env.S3_REGION &&
+    process.env.S3_ACCESS_KEY_ID &&
+    process.env.S3_SECRET_ACCESS_KEY
+);
+if (process.env.NODE_ENV === "production" && !configuredSecuredDir && !configuredS3) {
   throw new Error(
-    "SECURED_DIR must be configured in production; document storage must not default to the repository."
+    "Configure SECURED_DIR or complete S3_* private storage settings in production."
   );
 }
 

@@ -1,34 +1,32 @@
-/**
- * rateLimit.ts
- *
- * A fixed-window limiter held in process memory. The intent is not to defeat a
- * determined attacker -- nothing in-process can -- but to make bulk harvesting
- * of ten documents obvious and slow, and to leave a log trail when it
- * happens.
- *
- * Limitation worth stating plainly: this state is per-instance. On a serverless
- * host with N instances, the effective ceiling is limit x N. Swap the store
- * for Redis (Upstash) before relying on it under real load; the interface here
- * is deliberately narrow so that swap is a single-file change.
- */
+import { Redis } from "@upstash/redis";
 
+/**
+ * Shared fixed-window limiter. Upstash is used in production so limits apply
+ * across Vercel/serverless instances. Local development may use the in-memory
+ * fallback; production fails closed if the shared credentials are absent.
+ */
 interface Bucket {
   count: number;
   resetAt: number;
 }
 
 const buckets = new Map<string, Bucket>();
+const redis =
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? Redis.fromEnv()
+    : null;
 
-/** Keep the map from growing without bound under a spray of unique keys. */
+export function isSharedRateLimitConfigured(): boolean {
+  return redis !== null;
+}
+
 const MAX_TRACKED_KEYS = 10_000;
 
 function sweep(now: number): void {
   if (buckets.size < MAX_TRACKED_KEYS) return;
-  for (const [k, v] of buckets) {
-    if (v.resetAt < now) buckets.delete(k);
+  for (const [key, bucket] of buckets) {
+    if (bucket.resetAt < now) buckets.delete(key);
   }
-  // If the map is still oversized (every key live at once), drop oldest
-  // insertions. Map preserves insertion order, so this is a cheap FIFO.
   while (buckets.size >= MAX_TRACKED_KEYS) {
     const oldest = buckets.keys().next();
     if (oldest.done) break;
@@ -39,34 +37,38 @@ function sweep(now: number): void {
 export interface LimitResult {
   ok: boolean;
   remaining: number;
-  /** Seconds until the window resets. Present when ok is false. */
   retryAfter?: number;
 }
 
-/**
- * Count one hit against `key`.
- *
- * @param key     identifies the caller, normally IP plus route
- * @param limit   hits allowed per window
- * @param windowMs window length in milliseconds
- */
-export function rateLimit(
+export async function rateLimit(
   key: string,
   limit = 30,
   windowMs = 60_000
-): LimitResult {
+): Promise<LimitResult> {
+  if (redis) {
+    const redisKey = `portfolio:ratelimit:${key}`;
+    const count = await redis.incr(redisKey);
+    if (count === 1) await redis.expire(redisKey, Math.ceil(windowMs / 1000));
+    return count > limit
+      ? { ok: false, remaining: 0, retryAfter: Math.ceil(windowMs / 1000) }
+      : { ok: true, remaining: limit - count };
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required in production."
+    );
+  }
+
   const now = Date.now();
   sweep(now);
-
   const existing = buckets.get(key);
-
   if (!existing || existing.resetAt <= now) {
     buckets.set(key, { count: 1, resetAt: now + windowMs });
     return { ok: true, remaining: limit - 1 };
   }
 
   existing.count += 1;
-
   if (existing.count > limit) {
     return {
       ok: false,
@@ -74,20 +76,11 @@ export function rateLimit(
       retryAfter: Math.max(1, Math.ceil((existing.resetAt - now) / 1000)),
     };
   }
-
   return { ok: true, remaining: limit - existing.count };
 }
 
-/**
- * Best-effort client address. Trusts x-forwarded-for because the site is
- * expected to sit behind a proxy or CDN; on a bare host the header is
- * attacker-controlled, which at worst lets someone move their own counter.
- */
+/** Prefer proxy-normalized addresses; forwarded headers are fallback only. */
 export function clientKey(headers: Headers, route: string): string {
-  // Prefer the proxy-normalised address. A caller can prepend arbitrary values
-  // to x-forwarded-for on some hosts; using that first would let one attacker
-  // rotate through unlimited buckets. Only trust x-forwarded-for as fallback
-  // when the hosting proxy does not provide a canonical address header.
   const ip =
     headers.get("x-real-ip") ||
     headers.get("cf-connecting-ip") ||
@@ -98,11 +91,6 @@ export function clientKey(headers: Headers, route: string): string {
 
 export type AccessEvent = "allow" | "deny" | "bad-token" | "not-found";
 
-/**
- * Structured access log. One line per denied or unusual request. Sinks to
- * stdout, which is where a serverless host collects it; point this at a real
- * log store if you ever need to alert on it.
- */
 export function logAccess(
   event: AccessEvent,
   docId: string | null,
@@ -114,8 +102,7 @@ export function logAccess(
     doc: docId,
     ip,
   });
-
-  if (event === "allow") return; // keep stdout for signal, not noise
+  if (event === "allow") return;
   if (event === "not-found" || event === "bad-token") {
     console.warn(`[doc-access] ${line}`);
   } else {

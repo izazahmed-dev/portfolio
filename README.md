@@ -152,12 +152,43 @@ path. Swapping a valid token onto a different document fails at step 3.
 
 ### Deployment
 
-This site **requires a Node server** (Vercel, or any Node host). Static export
-is fundamentally incompatible with the access control above — a static build
-has no server to check a token.
+This site **requires a Node server** (Vercel, or any Node host). Static export is fundamentally incompatible with the access control above — a static build has no server to check a token.
 
 Set `DOC_SIGNING_SECRET` in the host's environment. The app throws on boot in
 production without it, rather than falling back to a guessable default.
+
+#### Vercel + private S3-compatible storage + Upstash
+
+For Vercel, keep the bucket private and upload objects using these keys:
+
+```text
+<S3_PREFIX>/documents/<filename>
+<S3_PREFIX>/previews/<filename>
+```
+
+Configure the following Vercel environment variables for **Production** and
+**Preview** only as needed. Never commit their values:
+
+```text
+DOC_SIGNING_SECRET=<random value with at least 32 characters>
+S3_BUCKET=<private bucket>
+S3_REGION=<bucket region>
+S3_ACCESS_KEY_ID=<least-privilege read-only key>
+S3_SECRET_ACCESS_KEY=<secret for that key>
+S3_ENDPOINT=<provider endpoint, omit for AWS S3>
+S3_PREFIX=portfolio
+S3_FORCE_PATH_STYLE=false
+UPSTASH_REDIS_REST_URL=<Upstash REST URL>
+UPSTASH_REDIS_REST_TOKEN=<Upstash REST token>
+```
+
+The S3 identity needs read-only access to the configured prefix and no public
+listing or public object access. The Upstash database is used for the shared
+document and preview rate limits across Vercel instances. If the Upstash
+variables are absent in production, protected requests fail closed rather than
+silently falling back to an instance-local limiter. Local development may omit
+the provider variables and use the ignored `secured/` directory plus the
+in-memory limiter.
 
 ---
 
