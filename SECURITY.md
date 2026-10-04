@@ -17,7 +17,7 @@ The current repository tip no longer contains those files. The `secured/` direct
 ### Remaining production actions
 
 - Put originals and previews in private object storage or a private mounted volume.
-- Set `SECURED_DIR` in production; the app refuses to boot when it is missing.
+- Set `SECURED_DIR` in production; protected requests return `503` when it is missing.
 - Rotate any exposed credentials or identifiers contained in the old files.
 - Rotate `DOC_SIGNING_SECRET` before production so old signed links are invalid.
 - Do not include the private directory in Next output tracing or a static export.
@@ -36,7 +36,7 @@ History rewriting and force-pushing a public repository was destructive; it was 
 - Previews include a provenance watermark.
 - The application does not rely on `user-select: none`, which would harm accessibility.
 - Robots and sitemap files exclude the document API.
-- Production fails closed when `DOC_SIGNING_SECRET` or `SECURED_DIR` is missing.
+- Protected routes fail closed when `DOC_SIGNING_SECRET`, private storage, or Upstash configuration is missing.
 - CSP, HSTS, frame, referrer, permissions, and MIME security headers are included.
 - The rate limiter prefers proxy-normalized client address headers.
 

@@ -23,6 +23,18 @@ export function isS3StorageConfigured(): boolean {
   return s3Configured;
 }
 
+export function assertPrivateStorageConfigured(): void {
+  if (
+    process.env.NODE_ENV === "production" &&
+    !s3Configured &&
+    !process.env.SECURED_DIR
+  ) {
+    throw new Error(
+      "Configure SECURED_DIR or complete S3_* private storage settings in production."
+    );
+  }
+}
+
 function relativeKey(declaredPath: string): string | null {
   const normalised = declaredPath.replaceAll("\\", "/");
   const parts = normalised.split("/").filter(Boolean);

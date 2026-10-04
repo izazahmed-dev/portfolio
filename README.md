@@ -154,8 +154,10 @@ path. Swapping a valid token onto a different document fails at step 3.
 
 This site **requires a Node server** (Vercel, or any Node host). Static export is fundamentally incompatible with the access control above — a static build has no server to check a token.
 
-Set `DOC_SIGNING_SECRET` in the host's environment. The app throws on boot in
-production without it, rather than falling back to a guessable default.
+Set `DOC_SIGNING_SECRET` in the host's environment. Protected requests return
+`503` when it is missing rather than falling back to a guessable default; the
+build itself remains deployable so Vercel can compile before runtime variables
+are attached.
 
 #### Vercel + private S3-compatible storage + Upstash
 

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import path from "node:path";
 import { DOCS } from "@/lib/records";
-import { verifyToken } from "@/lib/signing";
+import { assertSigningConfigured, verifyToken } from "@/lib/signing";
 import { rateLimit, clientKey, logAccess } from "@/lib/rateLimit";
-import { readPrivateAsset } from "@/lib/privateStorage";
+import {
+  assertPrivateStorageConfigured,
+  readPrivateAsset,
+} from "@/lib/privateStorage";
 
 /**
  * /api/doc/[id]
@@ -41,6 +44,17 @@ export async function GET(
 ): Promise<NextResponse> {
   const { id } = await params;
   const ip = clientKey(req.headers, "doc");
+
+  try {
+    assertSigningConfigured();
+    assertPrivateStorageConfigured();
+  } catch {
+    logAccess("deny", id, ip);
+    return NextResponse.json(
+      { error: "Protected document service is not configured." },
+      { status: 503, headers: { "Retry-After": "60" } }
+    );
+  }
 
   let limit;
   try {

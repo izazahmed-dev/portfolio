@@ -16,17 +16,6 @@ import path from "node:path";
  * and accidentally shipping identity documents in a public build artifact.
  */
 const configuredSecuredDir = process.env.SECURED_DIR;
-const configuredS3 = Boolean(
-  process.env.S3_BUCKET &&
-    process.env.S3_REGION &&
-    process.env.S3_ACCESS_KEY_ID &&
-    process.env.S3_SECRET_ACCESS_KEY
-);
-if (process.env.NODE_ENV === "production" && !configuredSecuredDir && !configuredS3) {
-  throw new Error(
-    "Configure SECURED_DIR or complete S3_* private storage settings in production."
-  );
-}
 
 export const SECURED_ROOT = path.resolve(
   process.cwd(),
@@ -102,7 +91,9 @@ export const LINK_TTL_MS = 30 * 60 * 1000; // 30 minutes
  * and deliberately fails closed in production rather than shipping a known
  * constant that would let anyone forge a link.
  */
-const SECRET = (() => {
+let developmentSecret: string | undefined;
+
+function getSecret(): string {
   const fromEnv = process.env.DOC_SIGNING_SECRET;
   if (fromEnv && fromEnv.length >= 32) return fromEnv;
 
@@ -113,13 +104,22 @@ const SECRET = (() => {
   }
 
   // Dev only: ephemeral, so nobody can hardcode it into a client.
-  return randomBytes(48).toString("base64url");
-})();
+  developmentSecret ??= randomBytes(48).toString("base64url");
+  return developmentSecret;
+}
 
 export function isSigningConfigured(): boolean {
   return Boolean(
     process.env.DOC_SIGNING_SECRET && process.env.DOC_SIGNING_SECRET.length >= 32
   );
+}
+
+export function assertSigningConfigured(): void {
+  if (!isSigningConfigured() && process.env.NODE_ENV === "production") {
+    throw new Error(
+      "DOC_SIGNING_SECRET must be set to at least 32 characters in production."
+    );
+  }
 }
 
 /**
@@ -132,7 +132,7 @@ export function isSigningConfigured(): boolean {
 function mint(docId: string, variant: "file" | "preview"): string {
   const expires = Date.now() + LINK_TTL_MS;
   const payload = `${variant}:${docId}:${expires}`;
-  const mac = createHmac("sha256", SECRET).update(payload).digest("base64url");
+  const mac = createHmac("sha256", getSecret()).update(payload).digest("base64url");
   return `${Buffer.from(payload).toString("base64url")}.${mac}`;
 }
 
@@ -157,7 +157,7 @@ function check(token: string): { docId: string; variant: "file" | "preview" } | 
     return null;
   }
 
-  const expected = createHmac("sha256", SECRET).update(payload).digest("base64url");
+  const expected = createHmac("sha256", getSecret()).update(payload).digest("base64url");
   const a = Buffer.from(mac);
   const b = Buffer.from(expected);
 
