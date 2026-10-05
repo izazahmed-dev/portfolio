@@ -51,7 +51,7 @@ export function Cabinet() {
     <section
       id="cabinet"
       className="relative scroll-mt-[var(--chrome)] py-24 md:py-32"
-      data-ripple-zone
+      data-water-zone
       style={{ borderTop: "1px solid var(--rule-strong)" }}
     >
       <div className="shell">
@@ -226,7 +226,7 @@ function Row({
           {/* Below lg the active row carries its own plate inline */}
           {active && (
             <span className="mt-4 block lg:hidden">
-              <span className="plate impress block overflow-hidden">
+              <span data-water-plate className="plate impress block overflow-hidden">
                 <Sheet doc={doc} />
                 <span className="block p-4">
                   <span className="block text-[0.875rem] font-medium">{doc.headline}</span>
@@ -284,7 +284,7 @@ function Plate({ doc, onOpen }: { doc: SourceDoc; onOpen: () => void }) {
 
   return (
     <div className="sticky" style={{ top: "calc(var(--chrome) + 1.5rem)" }}>
-      <div ref={spot} className="spot plate impress overflow-hidden">
+      <div ref={spot} data-water-plate className="spot plate impress overflow-hidden">
         <div ref={sheetRef}>
           <Sheet doc={doc} />
         </div>

@@ -8,7 +8,7 @@ import { DOCS } from "@/lib/records";
 import { fileUrl, previewUrl } from "@/lib/signing";
 import { DocumentAccess } from "@/components/site/DocumentAccess";
 import { DocumentViewerProvider } from "@/components/site/DocumentViewerProvider";
-import { CursorRipple } from "@/components/motion/CursorRipple";
+import LiquidCursor from "@/components/motion/LiquidCursor";
 
 /**
  * Server component. Every animated island below is its own client leaf.
@@ -58,7 +58,7 @@ export default function Page() {
           <Colophon />
         </main>
         <Imprint />
-        <CursorRipple />
+        <LiquidCursor />
       </DocumentViewerProvider>
     </DocumentAccess>
   );
