@@ -89,6 +89,7 @@ export function TitlePage() {
       id="top"
       ref={root as React.RefObject<HTMLElement>}
       className="relative flex min-h-[100dvh] flex-col"
+      data-ripple-zone
       style={{ paddingTop: "calc(var(--chrome) + var(--step-2))" }}
     >
       <div className="shell flex-1">

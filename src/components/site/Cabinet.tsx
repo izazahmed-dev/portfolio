@@ -51,6 +51,7 @@ export function Cabinet() {
     <section
       id="cabinet"
       className="relative scroll-mt-[var(--chrome)] py-24 md:py-32"
+      data-ripple-zone
       style={{ borderTop: "1px solid var(--rule-strong)" }}
     >
       <div className="shell">

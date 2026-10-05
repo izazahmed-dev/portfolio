@@ -399,6 +399,51 @@
   cursor: crosshair;
 }
 
+/* --- CURSOR RIPPLE --------------------------------------------------------
+   A small editorial ring, not a full-screen water simulation. The layer is
+   fixed so the effect follows the pointer without changing document layout;
+   the component only creates rings while the pointer is inside the hero or
+   evidence cabinet. */
+.cursor-ripple-layer {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-sheet) - 1);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.cursor-ripple {
+  position: absolute;
+  display: block;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.45);
+  animation: cursor-ripple-drift 0.78s var(--ease) forwards;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent),
+    inset 0 0 12px color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+@keyframes cursor-ripple-drift {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.45);
+  }
+  18% {
+    opacity: 0.34;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce), (pointer: coarse) {
+  .cursor-ripple-layer {
+    display: none;
+  }
+}
+
 /* Sticky column headers on the register table: the reader never loses which
    column a mark belongs to on a long sheet. */
 .reg-head {
