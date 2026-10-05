@@ -187,6 +187,13 @@ export function RunningHead() {
         />
       </header>
 
+      {/* GradualBlur: the page softens as it slides under the head. */}
+      <div aria-hidden className="edge-blur no-print" style={{ opacity: inked ? 1 : 0 }}>
+        <i />
+        <i />
+        <i />
+      </div>
+
       {open && (
         <div
           className="no-print fixed inset-0 lg:hidden"
@@ -268,10 +275,59 @@ export function Imprint() {
         <p className="t-data text-[0.625rem] uppercase tracking-[0.16em]" style={{ color: "var(--ink-lbl)" }}>
           {PROFILE.legalName}, {PROFILE.institution}, {PROFILE.batch}
         </p>
-        <p className="t-data text-[0.625rem] uppercase tracking-[0.16em]" style={{ color: "var(--ink-lbl)" }}>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <p className="t-data text-[0.625rem] uppercase tracking-[0.16em]" style={{ color: "var(--ink-lbl)" }}>
           College result sheets are marked provisional by the issuer
         </p>
+          <MotionToggle />
+        </div>
       </div>
     </footer>
+  );
+}
+
+
+/**
+ * Motion switch. Some readers want the sheet still without changing an OS
+ * setting for one site. Every animation here reads prefersReducedMotion() once
+ * at setup, and that now also honours data-motion="off", so a reload applies
+ * the choice everywhere at once, exactly as the OS setting would on load.
+ * When the OS already asks for reduced motion, the switch says so instead.
+ */
+function MotionToggle() {
+  const [state, setState] = useState<"on" | "off" | "system">("on");
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) setState("system");
+    else if (document.documentElement.getAttribute("data-motion") === "off") setState("off");
+  }, []);
+
+  if (state === "system") {
+    return (
+      <span className="t-data text-[0.625rem] uppercase tracking-[0.16em]" style={{ color: "var(--ink-lbl)" }}>
+        Motion off, system setting
+      </span>
+    );
+  }
+
+  const flip = () => {
+    try {
+      window.localStorage.setItem("motion", state === "off" ? "on" : "off");
+    } catch {
+      /* storage unavailable: the choice could not persist across the reload */
+      return;
+    }
+    window.location.reload();
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={flip}
+      className="btn--quiet text-[0.625rem] uppercase tracking-[0.16em]"
+      aria-label={state === "off" ? "Turn motion on" : "Turn motion off"}
+    >
+      Motion {state === "off" ? "off" : "on"}
+    </button>
   );
 }

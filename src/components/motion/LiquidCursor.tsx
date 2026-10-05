@@ -3,6 +3,12 @@
 /**
  * LiquidCursor — GPU height-field water over paper.
  *
+ * Placement: the Cabinet's document scan only (the one [data-water-zone]).
+ * It used to run over the hero and the index rows, where it rode over text
+ * people were trying to read. On the scan it reads as a wet proof just
+ * pulled, and touching it is touching the document. Tuned toward ink, not
+ * pool: shorter, thicker waves and a quieter highlight.
+ *
  * What this actually is
  * ---------------------
  * A damped 2D wave equation (linearised shallow water), NOT Navier–Stokes:
@@ -34,12 +40,12 @@ import { useEffect, useRef } from "react";
 /* ------------------------------------------------------------------ tunables */
 
 const CFG = {
-  maxSimDesktop: 512,
-  maxSimMedium: 384,
+  maxSimDesktop: 320,
+  maxSimMedium: 256,
   maxDpr: 1.5,
   maxCanvasPixels: 1_800_000,
   waveK: 0.42, // c²·dt²/dx² — must stay < 0.5
-  damping: 0.9975, // per 1/120 s step → ~2.3 s half-life
+  damping: 0.992, // per 1/120 s step -> ~0.7 s half-life: short and thick, like wet ink
   simStep: 1 / 120,
   maxStepsPerFrame: 4,
   fadeMs: 900,
@@ -169,7 +175,7 @@ void main() {
   vec3 lc    = mix(ink, paper, uDark);
 
   float aSh  = max(-diff, 0.0) * 2.2 * 0.55;
-  float aHi  = (max(diff, 0.0) * 1.6 + spec * 1.2) * 0.6 * mix(0.7, 1.0, uDark);
+  float aHi  = (max(diff, 0.0) * 1.6 + spec * 1.2) * 0.35 * mix(0.7, 1.0, uDark);
   float aAcc = trough * 0.40 * mix(1.0, 1.4, uDark);
   float aLn  = lineA * 0.45;
 
@@ -832,7 +838,7 @@ export default function LiquidCursor({ idleMs = 3500 }: { idleMs?: number }) {
     };
 
     function evaluate() {
-      const off = mqReduce.matches || mqCoarse.matches || mqNoHover.matches || mqSmall.matches;
+      const off = root.getAttribute("data-motion") === "off" || mqReduce.matches || mqCoarse.matches || mqNoHover.matches || mqSmall.matches;
       let next: Mode = off ? "off" : glFailed ? "css" : "gl";
       if (next === "gl" && !ensureGL()) {
         glFailed = true;

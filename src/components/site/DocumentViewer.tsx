@@ -571,6 +571,8 @@ export function DocumentViewer({
         {/* --- status bar: the pager and the honest note --- */}
         <div className="viewer-chrome viewer-chrome--status">
           <div className="flex min-w-0 items-center gap-2">
+            <VerifiedMark status={status} />
+            <span className="viewer-omni__split" aria-hidden />
             {/* The pager lives here rather than in the toolbar. A page control
                 is not a browser control, and the status bar is the one strip in
                 a window that is not pretending to be navigation. */}
@@ -627,5 +629,67 @@ export function DocumentViewer({
         </div>
       </div>
     </div>
+  );
+}
+
+
+/**
+ * VERIFIED MARK -- adapted from React Bits' StatusMark, ported from
+ * motion/react to the GSAP DrawSVG already registered in lib/gsap.
+ *
+ * A document only renders if the route accepted its signed link, so the
+ * moment the sheet lands is the moment the signature is known to be good.
+ * The dashed ring turns while the request is out, then draws closed with a
+ * tick. It makes the access control visible as evidence, which is the
+ * argument of the whole site. It says "verified", never "valid for 30
+ * minutes": the link was minted when the page rendered, so the remaining
+ * time is not something this window knows.
+ */
+function VerifiedMark({ status }: { status: Status }) {
+  const ring = useRef<SVGCircleElement | null>(null);
+  const tick = useRef<SVGPathElement | null>(null);
+
+  useEffect(() => {
+    if (status !== "ready" || prefersReducedMotion()) return;
+    const ctx = gsap.context(() => {
+      if (ring.current) {
+        gsap.fromTo(ring.current, { drawSVG: "0%" }, { drawSVG: "100%", duration: 0.5, ease: "power2.out" });
+      }
+      if (tick.current) {
+        gsap.fromTo(
+          tick.current,
+          { drawSVG: "0%" },
+          { drawSVG: "100%", duration: 0.3, delay: 0.36, ease: "power2.out" }
+        );
+      }
+    });
+    return () => ctx.revert();
+  }, [status]);
+
+  const label =
+    status === "ready"
+      ? "Signed link verified"
+      : status === "error"
+        ? "Link not verified"
+        : "Verifying signed link";
+
+  return (
+    <span className="verify-mark" data-state={status} role="status">
+      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+        <circle ref={ring} cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
+        {status === "ready" && (
+          <path
+            ref={tick}
+            d="M5 8.3l2 2 4-4.4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        )}
+      </svg>
+      <span className="t-data text-[0.625rem] uppercase tracking-[0.12em]">{label}</span>
+    </span>
   );
 }

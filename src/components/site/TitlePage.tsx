@@ -12,6 +12,7 @@ import {
   useFitToMeasure,
 } from "@/components/motion/Kinetic";
 import { PROFILE } from "@/lib/records";
+import { HalftonePortrait } from "@/components/motion/Halftone";
 
 /**
  * Title page.
@@ -89,7 +90,6 @@ export function TitlePage() {
       id="top"
       ref={root as React.RefObject<HTMLElement>}
       className="relative flex min-h-[100dvh] flex-col"
-      data-water-zone
       style={{ paddingTop: "calc(var(--chrome) + var(--step-2))" }}
     >
       <div className="shell flex-1">
@@ -178,7 +178,7 @@ export function TitlePage() {
               <span className="reg-mark" style={{ bottom: -7, left: -7 }} aria-hidden />
               <span className="reg-mark" style={{ bottom: -7, right: -7 }} aria-hidden />
 
-              <div data-water-plate className="plate impress relative overflow-hidden">
+              <div className="plate impress relative overflow-hidden">
                 <div className="relative aspect-[3/4] w-full">
                   <Image
                     src="/portrait.webp"
@@ -188,6 +188,8 @@ export function TitlePage() {
                     sizes="(max-width: 1023px) 82vw, 300px"
                     className="object-cover object-top"
                   />
+                  {/* Halftone screen over the photograph; the pointer lifts it. */}
+                  <HalftonePortrait src="/portrait.webp" />
                 </div>
 
                 <div

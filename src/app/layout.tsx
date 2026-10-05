@@ -233,6 +233,7 @@ const noFlash = `(function(){try{
   var t=(s==="light"||s==="dark")?s:(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");
   document.documentElement.setAttribute("data-theme",t);
   document.documentElement.style.colorScheme=t;
+  if(localStorage.getItem("motion")==="off")document.documentElement.setAttribute("data-motion","off");
 }catch(e){
   document.documentElement.setAttribute("data-theme","dark");
   document.documentElement.style.colorScheme="dark";

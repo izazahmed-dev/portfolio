@@ -11,6 +11,11 @@ export default function NotFound() {
     <main className="flex min-h-[100dvh] items-center">
       <div className="shell">
         <div className="max-w-[34ch]">
+          <svg className="ink-404" viewBox="0 0 600 200" aria-hidden>
+            <text x="300" y="176" textAnchor="middle">
+              404
+            </text>
+          </svg>
           <p className="t-label">No such sheet</p>
           <h1 className="t-h2 mt-5" style={{ color: "var(--ink)" }}>
             That page is not in the cabinet.

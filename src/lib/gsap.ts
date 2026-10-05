@@ -36,8 +36,11 @@ export const EASE_IN = "power2.in";
 export const EASE_CSS = "cubic-bezier(0.32, 0.72, 0, 1)";
 
 export function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined") return false;
+  // The Imprint's motion switch writes data-motion="off" before first paint,
+  // so a reader's choice and the OS setting are honoured by the same check.
   return (
-    typeof window !== "undefined" &&
+    document.documentElement.getAttribute("data-motion") === "off" ||
     window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 }
@@ -53,9 +56,9 @@ export function useReducedMotionLive(): boolean {
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onChange = () => setReduced(mq.matches);
+    const onChange = () => setReduced(prefersReducedMotion());
     mq.addEventListener("change", onChange);
-    setReduced(mq.matches);
+    setReduced(prefersReducedMotion());
     return () => mq.removeEventListener("change", onChange);
   }, []);
 

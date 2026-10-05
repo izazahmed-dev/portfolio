@@ -12,6 +12,7 @@ import {
   useDirectionalWipe,
 } from "@/components/motion/Kinetic";
 import { DOCS, TRANSCRIPTS } from "@/lib/records";
+import { TableCrosshair } from "@/components/motion/TableCrosshair";
 import { useDocLink } from "@/components/site/DocumentAccess";
 import { useOpenDocument } from "@/components/site/DocumentViewerProvider";
 
@@ -188,7 +189,8 @@ export function Register() {
           </div>
 
           {/* Marks, grouped rather than hairlined on every row */}
-          <div className="lg:col-span-8">
+          <div className="relative isolate lg:col-span-8">
+            <TableCrosshair />
             <div
               className={`reg-head reg-grid grid gap-x-6 pb-3 ${twoCol ? "reg-grid--two" : ""}`}
               style={{ "--reg-grid": grid, borderBottom: "1px solid var(--rule-strong)" } as React.CSSProperties}
