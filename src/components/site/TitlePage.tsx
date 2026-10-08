@@ -12,7 +12,6 @@ import {
   useFitToMeasure,
 } from "@/components/motion/Kinetic";
 import { PROFILE } from "@/lib/records";
-import { HalftonePortrait } from "@/components/motion/Halftone";
 
 /**
  * Title page.
@@ -188,8 +187,6 @@ export function TitlePage() {
                     sizes="(max-width: 1023px) 82vw, 300px"
                     className="object-cover object-top"
                   />
-                  {/* Halftone screen over the photograph; the pointer lifts it. */}
-                  <HalftonePortrait src="/portrait.webp" />
                 </div>
 
                 <div
