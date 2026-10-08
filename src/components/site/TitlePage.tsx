@@ -180,7 +180,7 @@ export function TitlePage() {
               <div className="plate impress relative overflow-hidden">
                 <div className="relative aspect-[3/4] w-full">
                   <Image
-                    src="/portrait.webp"
+                    src="/portrait.webp?v=professional-20261008"
                     alt={`${PROFILE.legalName}, portrait`}
                     fill
                     priority
