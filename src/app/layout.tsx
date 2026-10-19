@@ -48,9 +48,9 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
-const TITLE = `${PROFILE.legalName}, AI and ML undergraduate, verified record`;
+const TITLE = `${PROFILE.legalName}, frontend projects and verified record`;
 const DESCRIPTION =
-  "AI and ML portfolio of Peddapalem Izaz Ahmed: CivicPulse turns spoken complaints into triaged cases across eleven languages, alongside a local-first computer-vision monitor.";
+  "Frontend portfolio of Peddapalem Izaz Ahmed: a Next.js, React and TypeScript case study, CivicPulse, and an evidence-led record of projects and coursework.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://izazahmed.dev"),
@@ -65,6 +65,8 @@ export const metadata: Metadata = {
     "Peddapalem Izaz Ahmed",
     "Izaz Ahmed",
     "AI and Machine Learning undergraduate",
+    "Frontend developer intern",
+    "Next.js React TypeScript portfolio",
     "R.M.D. Engineering College",
     "CivicPulse",
     "posture and blink monitor",
