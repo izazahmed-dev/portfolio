@@ -27,11 +27,34 @@ export function Dossier() {
             the raw statement: the two cases below carry their own argument
             and do not need an introduction to justify them. */}
         <div className="max-w-[28ch]">
-          <p className="t-label mb-4">AI systems / human outcomes</p>
+          <p className="t-label mb-4">Frontend engineering / applied systems</p>
           <TypeSlug as="h2" className="t-h2">
-            Two things I built and can defend line by line.
+            Interfaces and systems I can explain line by line.
           </TypeSlug>
         </div>
+
+        <article className="mt-12 border-t pt-8" style={{ borderColor: "var(--rule-strong)" }}>
+          <p className="t-label">Frontend case study · the site you are using</p>
+          <h3 className="t-h3 mt-4">An evidence-led portfolio built in Next.js</h3>
+          <p className="t-body mt-4 max-w-[72ch]">
+            I built this responsive portfolio with React, TypeScript and Tailwind. Projects appear before
+            credentials so a recruiter can inspect the work first. The navigation, document drawer and reader
+            manage keyboard focus; reduced-motion controls let visitors skip the animations.
+          </p>
+          <p className="t-body mt-3 max-w-[72ch]">
+            The document links are signed on the server and expire after 30 minutes. The repository includes
+            the implementation and verification notes; the protected source documents are not in the current Git tree.
+          </p>
+          <a
+            href="https://github.com/izazahmed-dev/portfolio"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn--line mt-6"
+          >
+            Inspect the frontend source
+            <ArrowUpRight size={13} strokeWidth={2.2} />
+          </a>
+        </article>
 
         <div className="mt-20 space-y-28 md:space-y-36">
           {REPOS.map((repo) => (
