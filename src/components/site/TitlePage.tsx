@@ -100,7 +100,7 @@ export function TitlePage() {
               <span aria-hidden className="h-[9px] w-px" style={{ background: "var(--rule-strong)" }} />
               <span className="t-label">{PROFILE.batch}</span>
               <span aria-hidden className="h-[9px] w-px" style={{ background: "var(--rule-strong)" }} />
-              <span className="t-label">Open for a 2027 internship</span>
+              <span className="t-label">Open to frontend internships</span>
             </div>
           </div>
 
@@ -147,12 +147,21 @@ export function TitlePage() {
                 GitHub
                 <ArrowUpRight size={13} strokeWidth={2.2} />
               </a>
+              <a
+                href="https://github.com/izazahmed-dev/portfolio"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn--line"
+              >
+                This site&apos;s code
+                <ArrowUpRight size={13} strokeWidth={2.2} />
+              </a>
             </div>
             <div
               className="mt-6 inline-flex items-center gap-2.5"
               style={{ color: "var(--ink-mut)" }}
               role="status"
-              aria-label="Available for summer 2027 AI and machine learning internships"
+              aria-label="Open to frontend developer internships"
             >
               <span
                 aria-hidden
@@ -160,7 +169,7 @@ export function TitlePage() {
                 style={{ background: "var(--accent)", boxShadow: "0 0 0 4px var(--wash)" }}
               />
               <span className="t-data text-[0.625rem] uppercase tracking-[0.14em]">
-                Available for summer 2027 AI / ML internships
+                Open to frontend developer internships
               </span>
             </div>
           </div>
