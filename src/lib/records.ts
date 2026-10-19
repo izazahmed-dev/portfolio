@@ -103,7 +103,7 @@ export const PROFILE = {
   statement: ["Peddapalem", "Izaz Ahmed"],
   /** 24 words */
   subtext:
-    "Everything on this page opens its own receipt. Second year AI and ML undergraduate, two shipped projects, ten source documents, no unverifiable claim.",
+    "I build interfaces in Next.js, React and TypeScript. Explore this portfolio's source and two public projects, then inspect the evidence behind my work.",
 } as const;
 
 /* ------------------------------------------------------------------

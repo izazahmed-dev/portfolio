@@ -147,7 +147,7 @@ export function Colophon() {
       <div className="shell grid gap-12 lg:grid-cols-12 lg:gap-16">
         <div className="lg:col-span-7">
           <LiftOff as="h2" className="t-statement">
-            Open for an AI and ML internship from summer 2027.
+            Open to frontend developer internships.
           </LiftOff>
 
           <ProseReveal as="p" className="t-body mt-7">
