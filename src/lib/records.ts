@@ -103,14 +103,32 @@ export const PROFILE = {
   statement: ["Peddapalem", "Izaz Ahmed"],
   /** 24 words */
   subtext:
-    "Everything on this page opens its own receipt. Second year AI and ML undergraduate, two shipped projects, ten source documents, no unverifiable claim.",
+    "Everything on this page opens its own receipt. Second year AI and ML undergraduate, two shipped projects, eleven source documents, no unverifiable claim.",
 } as const;
 
 /* ------------------------------------------------------------------
    THE LEDGER
-   Ten documents. Each row in the index resolves to one of these.
+   Eleven documents. Each row in the index resolves to one of these.
    ------------------------------------------------------------------ */
 export const DOCS: SourceDoc[] = [
+  {
+    id: "build-battle-2026",
+    title: "Build Battle 2026, 2nd Runner-Up",
+    issuer: "Frontend Arena",
+    category: "Certification",
+    issued: "19 October 2026",
+    reference: "FA-KNKUGQU7",
+    headline: "2nd Runner-Up in an AI × Web Development Hackathon",
+    facts: [
+      "Awarded to Izaz Ahmed P",
+      "Recognised for the project InsightFlow",
+      "Build Battle 2026 was organised by Frontend Arena",
+      "Certificate includes a QR verification code and credential ID",
+    ],
+    file: "/documents/build-battle-2026.pdf",
+    preview: "/previews/build-battle-2026.webp",
+    kind: "pdf",
+  },
   {
     id: "oracle-agentic-ai",
     title: "Agentic AI Certified Foundations Associate",

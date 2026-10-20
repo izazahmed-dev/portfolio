@@ -1,7 +1,7 @@
 # izazahmed.dev
 
 A portfolio rendered as a letterpress specimen book: a title page, two shipped
-projects, an evidence cabinet of ten source documents, a transcribed academic
+projects, an evidence cabinet of eleven source documents, a transcribed academic
 register, and a contact colophon.
 
 The governing rule of the content: **every claim on the page resolves to a
@@ -42,7 +42,7 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
 
 ## How the document cabinet works
 
-The ten source documents are **not** public assets. They live in `/secured`,
+The eleven source documents are **not** public assets. They live in `/secured`,
 which is git-ignored, and are streamed by two route handlers that refuse to
 touch the filesystem without a valid signature.
 

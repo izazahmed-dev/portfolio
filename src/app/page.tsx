@@ -13,7 +13,7 @@ import LiquidCursor from "@/components/motion/LiquidCursor";
 /**
  * Server component. Every animated island below is its own client leaf.
  *
- * force-dynamic is load-bearing, not decorative. Ten documents get a fresh
+ * force-dynamic is load-bearing, not decorative. Eleven documents get a fresh
  * signed link on every request, so caching the rendered HTML would ship an
  * already-expiring set of links to every visitor after it. Per-request
  * rendering is the cost of access control.
