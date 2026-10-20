@@ -15,7 +15,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: `${"Izaz Ahmed"}, document cabinet`,
     short_name: "Izaz Ahmed",
     description:
-      "Portfolio and document cabinet of Peddapalem Izaz Ahmed. Two shipped projects and ten source documents, each one openable.",
+      "Portfolio and document cabinet of Peddapalem Izaz Ahmed. Two shipped projects and eleven source documents, each one openable.",
     start_url: "/",
     scope: "/",
     display: "standalone",
